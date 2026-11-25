@@ -1,0 +1,4342 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#136F4A" />
+    <title>그린렌즈 — 분리수거 판별기 &amp; 체스 라운지</title>
+    <meta
+      name="description"
+      content="쓰레기 사진을 올리거나 품목명을 입력하면 일반쓰레기, 캔·병류, 재활용 종이류를 즉시 구분하고, 여가용 체스 게임까지 즐길 수 있는 단일 HTML 웹 앱"
+    />
+    <meta property="og:title" content="그린렌즈 — 분리수거 판별기 &amp; 체스 라운지" />
+    <meta
+      property="og:description"
+      content="일반쓰레기 · 캔·병류 · 재활용 종이류 즉시 판별 및 무료 체스 게임"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Outfit:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f7f8f6;
+        --surface: #ffffff;
+        --surface-soft: #fafbf9;
+        --surface-muted: #f2f4f0;
+        --border: #e3e6e1;
+        --border-strong: #d4d9d2;
+        --ink: #141a16;
+        --ink-sub: #263029;
+        --muted: #556158;
+        --brand: #136f4a;
+        --brand-hover: #0e5639;
+        --brand-soft: #f2f8f5;
+        --danger: #b91c1c;
+        --danger-bg: #fef2f2;
+        --danger-border: #fecaca;
+        --warn: #b45309;
+        --font-sans: 'IBM Plex Sans KR', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+        --font-display: 'Outfit', 'IBM Plex Sans KR', sans-serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button, input, select {
+        font-family: inherit;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      @media (min-width: 640px) {
+        .container {
+          padding-left: 24px;
+          padding-right: 24px;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .container {
+          padding-left: 40px;
+          padding-right: 40px;
+        }
+      }
+
+      /* Top Header: 3 exact zones */
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        height: 56px;
+        background: rgba(247, 248, 246, 0.92);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .header-inner {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 32px;
+      }
+
+      .brand {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .main-nav {
+        display: none;
+        align-items: center;
+        gap: 24px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      @media (min-width: 768px) {
+        .main-nav {
+          display: flex;
+        }
+      }
+
+      .nav-link {
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: color 0.15s ease;
+        cursor: pointer;
+      }
+
+      .nav-link:hover {
+        color: var(--ink);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      .nav-link.active {
+        color: var(--brand);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        min-height: 38px;
+        padding: 8px 14px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: var(--brand-hover);
+      }
+
+      .btn-dark {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .btn-dark:hover:not(:disabled) {
+        background: #263029;
+      }
+
+      .btn-outline {
+        background: var(--surface);
+        border-color: var(--border-strong);
+        color: var(--ink);
+      }
+
+      .btn-outline:hover:not(:disabled) {
+        background: var(--surface-muted);
+      }
+
+      .btn-danger-outline {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--muted);
+      }
+
+      .btn-danger-outline:hover:not(:disabled) {
+        color: var(--danger);
+        border-color: var(--danger-border);
+        background: var(--danger-bg);
+      }
+
+      /* Main Layout */
+      main {
+        flex: 1;
+        padding-top: 28px;
+        padding-bottom: 56px;
+      }
+
+      .mobile-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 4px;
+        background: #eceee9;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 24px;
+      }
+
+      @media (min-width: 768px) {
+        .mobile-tabs {
+          display: none;
+        }
+      }
+
+      .mobile-tab-btn {
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        min-height: 38px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .mobile-tab-btn.active {
+        background: var(--surface);
+        color: var(--brand);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      .section-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 56px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+      }
+
+      @media (min-width: 640px) {
+        .card {
+          padding: 24px;
+        }
+      }
+
+      .hero-row {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 28px;
+      }
+
+      @media (min-width: 1024px) {
+        .hero-row {
+          flex-direction: row;
+          align-items: flex-end;
+        }
+      }
+
+      .eyebrow {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      .hero-title {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.24;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        max-width: 720px;
+      }
+
+      @media (min-width: 640px) {
+        .hero-title {
+          font-size: 34px;
+        }
+      }
+
+      .hero-desc {
+        margin: 12px 0 0 0;
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 660px;
+      }
+
+      .quota-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+
+      @media (min-width: 1024px) {
+        .quota-box {
+          min-width: 350px;
+        }
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: #eceee9;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--brand);
+        transition: width 0.2s ease;
+      }
+
+      .progress-fill.warn {
+        background: #d97706;
+      }
+
+      .progress-fill.danger {
+        background: #dc2626;
+      }
+
+      /* 2-Column Workspace Grid */
+      .scanner-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        align-items: stretch;
+      }
+
+      @media (min-width: 1024px) {
+        .scanner-grid {
+          grid-template-columns: 7fr 5fr;
+          gap: 32px;
+        }
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        padding: 4px;
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+
+      .segmented.three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .seg-btn {
+        border: none;
+        background: transparent;
+        border-radius: 7px;
+        min-height: 36px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .seg-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      .seg-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .dropzone {
+        margin-top: 16px;
+        border: 2px dashed var(--border-strong);
+        border-radius: 14px;
+        background: var(--surface-soft);
+        min-height: 290px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+        cursor: pointer;
+      }
+
+      .dropzone:hover,
+      .dropzone.dragging {
+        border-color: var(--brand);
+        background: var(--brand-soft);
+      }
+
+      .preview-stage {
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #141a16;
+        position: relative;
+        overflow: hidden;
+        min-height: 290px;
+        max-height: 420px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .preview-stage img,
+      .preview-stage video {
+        width: 100%;
+        height: 100%;
+        max-height: 420px;
+        object-fit: contain;
+        display: block;
+      }
+
+      .sample-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      @media (max-width: 520px) {
+        .sample-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .sample-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface-soft);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+      }
+
+      .sample-card:hover {
+        border-color: var(--brand);
+        background: var(--surface);
+      }
+
+      .sample-thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid var(--border);
+      }
+
+      /* Quick Keyword Lookup inside Scanner */
+      .lookup-bar {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #eceee9;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .lookup-form {
+        display: flex;
+        gap: 8px;
+      }
+
+      .input-text {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 13px;
+        background: var(--bg);
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        color: var(--ink);
+        outline: none;
+      }
+
+      .input-text:focus {
+        border-color: var(--brand);
+        background: var(--surface);
+      }
+
+      .input-text:disabled {
+        background: var(--surface-muted);
+        color: var(--muted);
+        cursor: not-allowed;
+      }
+
+      /* Category Color Surfaces */
+      .cat-general {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+      }
+
+      .cat-can_bottle {
+        background: #f0fdfa;
+        border-color: #99f6e4;
+        color: #134e4a;
+      }
+
+      .cat-paper {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #78350f;
+      }
+
+      .cat-other_recyclable {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1e3a8a;
+      }
+
+      .cat-not_trash {
+        background: #f5f5f4;
+        border-color: #d6d3d1;
+        color: #292524;
+      }
+
+      .step-list {
+        margin: 10px 0 0 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ink-sub);
+      }
+
+      .step-num {
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .guide-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      @media (min-width: 1024px) {
+        .guide-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+        }
+      }
+
+      .tricky-row {
+        padding: 16px 0;
+        border-top: 1px solid #eceee9;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      @media (min-width: 768px) {
+        .tricky-row {
+          grid-template-columns: 4fr 4fr 4fr;
+          gap: 20px;
+          align-items: start;
+        }
+      }
+
+      .history-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 14px;
+      }
+
+      .history-item {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--surface-soft);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .history-thumb {
+        width: 100%;
+        height: 124px;
+        object-fit: cover;
+        background: #eceee9;
+        cursor: pointer;
+      }
+
+      /* Chess Lounge */
+      .chess-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      @media (min-width: 1024px) {
+        .chess-grid {
+          grid-template-columns: 7fr 5fr;
+          gap: 32px;
+        }
+      }
+
+      .board-frame {
+        position: relative;
+        width: 100%;
+        max-width: 540px;
+        aspect-ratio: 1 / 1;
+        margin: 0 auto;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #263029;
+        background: #263029;
+        user-select: none;
+      }
+
+      .board-squares {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        width: 100%;
+        height: 100%;
+      }
+
+      .sq-btn {
+        position: relative;
+        border: none;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f0f2ec;
+        cursor: default;
+      }
+
+      .sq-btn.playable {
+        cursor: pointer;
+      }
+
+      .sq-btn.dark {
+        background: #5a8d71;
+      }
+
+      .sq-btn.last-light {
+        background: #dde8c6;
+      }
+
+      .sq-btn.last-dark {
+        background: #73a365;
+      }
+
+      .sq-btn.selected {
+        background: #b8d8ba !important;
+      }
+
+      .sq-btn.in-check {
+        background: rgba(239, 68, 68, 0.85) !important;
+      }
+
+      .sq-coord-rank {
+        position: absolute;
+        top: 2px;
+        left: 4px;
+        font-size: 10px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        line-height: 1;
+        pointer-events: none;
+      }
+
+      .sq-coord-file {
+        position: absolute;
+        bottom: 2px;
+        right: 4px;
+        font-size: 10px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        line-height: 1;
+        pointer-events: none;
+      }
+
+      .legal-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        background: rgba(20, 26, 22, 0.25);
+        pointer-events: none;
+      }
+
+      .legal-ring {
+        position: absolute;
+        inset: 4px;
+        border-radius: 999px;
+        border: 3px solid rgba(20, 26, 22, 0.35);
+        pointer-events: none;
+      }
+
+      .board-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(20, 26, 22, 0.74);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 10;
+      }
+
+      .overlay-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 340px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+      }
+
+      /* Modals & Drag Overlay */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(20, 26, 22, 0.5);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      .modal-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        max-width: 680px;
+        width: 100%;
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: 24px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+      }
+
+      @media (min-width: 640px) {
+        .modal-panel {
+          padding: 30px;
+        }
+      }
+
+      .plan-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      @media (min-width: 640px) {
+        .plan-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      /* Admin Table & Logs */
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 12px;
+      }
+
+      th {
+        padding: 10px 12px 10px 0;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      td {
+        padding: 10px 12px 10px 0;
+        border-bottom: 1px solid #eceee9;
+        vertical-align: middle;
+      }
+
+      .alert-error {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--danger);
+        background: var(--danger-bg);
+        border: 1px solid var(--danger-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+
+      .alert-success {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--brand);
+        background: var(--brand-soft);
+        border: 1px solid rgba(19, 111, 74, 0.25);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+
+      .site-footer {
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        padding: 22px 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .footer-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      @media (min-width: 640px) {
+        .footer-inner {
+          flex-direction: row;
+        }
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .link-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .link-btn:hover {
+        color: var(--ink);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+    </style>
+  <link rel="manifest" href="/manifest.webmanifest"><script src="/_aistudio-iframe.js?v=29045eb3"></script></head>
+  <body>
+    <!-- Global Drag Overlay -->
+    <div id="global-drag-overlay" class="modal-backdrop hidden" style="pointer-events: none;">
+      <div class="overlay-card" style="border: 2px dashed var(--brand); max-width: 400px;">
+        <p style="margin: 0; font-size: 16px; font-weight: 700;">쓰레기 사진을 여기에 놓아주세요</p>
+        <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--muted);">
+          일반쓰레기 · 캔·병류 · 재활용 종이류를 즉시 판별합니다
+        </p>
+      </div>
+    </div>
+
+    <!-- Top Bar: Strictly 3 Zones -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="#top" id="brand-home-link" class="brand">그린렌즈</a>
+
+        <nav class="main-nav" aria-label="주요 메뉴">
+          <a href="#scanner" class="nav-link active" data-nav="scanner">분류 스캐너</a>
+          <a href="#guide" class="nav-link" data-nav="guide">분리배출 기준</a>
+          <a href="#history" class="nav-link" data-nav="history">최근 기록</a>
+          <a href="#chess" class="nav-link" data-nav="chess">체스 게임</a>
+          <a href="#admin" class="nav-link" data-nav="admin">관리자 콘솔</a>
+        </nav>
+
+        <button type="button" id="header-new-scan-btn" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          새로 판별
+        </button>
+      </div>
+    </header>
+
+    <main id="top" class="container">
+      <!-- Mobile View Switcher -->
+      <div class="mobile-tabs" role="tablist" aria-label="모바일 화면 전환">
+        <button type="button" class="mobile-tab-btn active" data-mobile-view="scanner">분류 스캐너</button>
+        <button type="button" class="mobile-tab-btn" data-mobile-view="chess">체스 게임</button>
+        <button type="button" class="mobile-tab-btn" data-mobile-view="admin">관리자</button>
+      </div>
+
+      <!-- VIEW 1: SCANNER -->
+      <div id="view-scanner" class="section-stack">
+        <section id="scanner">
+          <div class="hero-row">
+            <div>
+              <p class="eyebrow">단일 HTML 무빌드 버전 · PC·모바일 겸용 · 일반쓰레기 · 캔·병류 · 재활용 종이류</p>
+              <h1 class="hero-title">
+                쓰레기 사진을 올리거나 품목명을 입력하면 분리배출 기준을 바로 구분해 드립니다
+              </h1>
+              <p class="hero-desc">
+                파일 선택, 창 전체 드래그, Ctrl+V 붙여넣기, 웹캠 촬영은 물론 품목명 직접 검색으로 일반쓰레기·캔·병·종이류를 즉시 안내합니다.
+              </p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: stretch; gap: 8px; flex-shrink: 0;">
+              <div class="quota-box">
+                <div style="flex: 1; min-width: 0;">
+                  <div id="scanner-quota-content"></div>
+                </div>
+                <button type="button" id="open-plan-btn" class="btn btn-dark">월 9,900원 무제한</button>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" id="hero-download-html-btn" class="btn btn-outline">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  index.html 다운로드
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="scanner-grid">
+            <!-- Left Capture / Upload Panel -->
+            <div class="card">
+              <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+                <div class="segmented" style="flex: 1; min-width: 240px;">
+                  <button type="button" id="mode-upload-btn" class="seg-btn active">사진 파일 업로드 (PC)</button>
+                  <button type="button" id="mode-camera-btn" class="seg-btn">웹캠 / 카메라 촬영</button>
+                </div>
+                <span class="mono" style="font-size: 11px; color: var(--muted);">Ctrl+O 파일 · Ctrl+V 붙여넣기</span>
+              </div>
+
+              <input id="file-input" type="file" accept="image/*" class="hidden" />
+
+              <!-- Upload Area -->
+              <div id="upload-panel">
+                <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="쓰레기 사진 업로드">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#136F4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <p style="margin: 12px 0 4px 0; font-size: 15px; font-weight: 700;">
+                    클릭하거나 사진을 여기로 끌어다 놓으세요
+                  </p>
+                  <p style="margin: 0; font-size: 12px; color: var(--muted);">
+                    스크린샷 Ctrl+V 붙여넣기도 바로 인식됩니다 (JPG · PNG · WebP)
+                  </p>
+                  <span class="btn btn-outline" style="margin-top: 14px;">사진 파일 선택</span>
+                </div>
+              </div>
+
+              <!-- Camera Area -->
+              <div id="camera-panel" class="hidden">
+                <div id="camera-error" class="alert-error hidden" style="margin-top: 14px;"></div>
+                <div class="preview-stage">
+                  <video id="camera-video" playsinline autoplay muted></video>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;">
+                  <select id="camera-select" class="input-text" style="flex: 1; min-width: 180px;"></select>
+                  <button type="button" id="camera-capture-btn" class="btn btn-primary">촬영해서 판별하기 (Space)</button>
+                </div>
+              </div>
+
+              <!-- Preview Stage when Image Selected -->
+              <div id="preview-panel" class="hidden">
+                <div class="preview-stage">
+                  <img id="preview-img" alt="선택된 쓰레기 사진 미리보기" />
+                </div>
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;">
+                  <span id="preview-meta" class="mono" style="font-size: 11px; color: var(--muted);"></span>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" id="reanalyze-btn" class="btn btn-outline">다시 분석 (R)</button>
+                    <button type="button" id="reset-preview-btn" class="btn btn-danger-outline">사진 비우기 (Esc)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Built-in Offline Samples -->
+              <div style="margin-top: 16px;">
+                <p style="margin: 0; font-size: 12px; font-weight: 600; color: var(--ink);">
+                  사진이 없다면 기본 예시로 바로 테스트해 보세요
+                </p>
+                <div id="sample-grid" class="sample-grid"></div>
+              </div>
+
+              <!-- Direct Keyword Classifier -->
+              <div class="lookup-bar">
+                <label for="quick-item-input" style="font-size: 12px; font-weight: 600; color: var(--ink);">
+                  품목 이름으로 바로 판별하기
+                </label>
+                <form id="quick-item-form" class="lookup-form">
+                  <input
+                    id="quick-item-input"
+                    type="text"
+                    class="input-text"
+                    placeholder="예: 피자박스, 영수증, 알루미늄 캔, 우유팩, 깨진 유리, 물티슈"
+                  />
+                  <button type="submit" class="btn btn-primary">품목 판별</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right Classification Result Panel -->
+            <div class="card" id="result-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div id="result-empty" style="margin: auto 0; padding: 36px 12px; text-align: center;">
+                <p style="margin: 0; font-size: 16px; font-weight: 700;">판별 결과가 여기에 표시됩니다</p>
+                <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--muted);">
+                  왼쪽에서 쓰레기 사진을 올리거나 품목명을 입력하면 일반쓰레기·캔·병류·종이류 여부를 안내합니다.
+                </p>
+              </div>
+
+              <div id="result-limit-alert" class="hidden" style="margin: auto 0; text-align: center; padding: 24px 12px;">
+                <p style="margin: 0; font-size: 16px; font-weight: 700; color: var(--danger);">
+                  이번 달 무료 판별 20회를 모두 사용했습니다
+                </p>
+                <p style="margin: 8px 0 16px 0; font-size: 13px; color: var(--muted);">
+                  매월 1일 자동 초기화되며, 관리자가 발급한 월 무제한 이용권 코드를 입력하면 즉시 무제한으로 이용할 수 있습니다.
+                </p>
+                <button type="button" id="limit-open-plan-btn" class="btn btn-primary">
+                  이용권 코드 입력 / 요금제 안내
+                </button>
+              </div>
+
+              <div id="result-content" class="hidden" style="display: flex; flex-direction: column; gap: 16px;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3-Category Core Guide -->
+        <section id="guide">
+          <div style="margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;">
+              3대 핵심 분리배출 기준
+            </h2>
+            <p style="margin: 6px 0 0 0; font-size: 14px; color: var(--muted);">
+              일반쓰레기, 캔·병류, 재활용 종이류를 구분하는 가장 기본적인 기준입니다.
+            </p>
+          </div>
+          <div id="core-guide-grid" class="guide-grid"></div>
+        </section>
+
+        <!-- Tricky Items Lookup -->
+        <section id="tricky">
+          <div class="card">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 18px;">
+              <div>
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700;">헷갈리기 쉬운 품목 빠른 비교</h2>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--muted);">
+                  재활용이 될 것 같지만 일반쓰레기로 버려야 하는 대표적인 예외 품목을 확인하세요.
+                </p>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                <input
+                  id="tricky-search"
+                  type="search"
+                  class="input-text"
+                  style="width: 210px;"
+                  placeholder="품목 검색 (예: 피자, 영수증)"
+                  aria-label="헷갈리는 품목 검색"
+                />
+                <div class="segmented" style="grid-template-columns: repeat(4, auto);">
+                  <button type="button" class="seg-btn active" data-tricky-filter="all">전체</button>
+                  <button type="button" class="seg-btn" data-tricky-filter="general">일반쓰레기</button>
+                  <button type="button" class="seg-btn" data-tricky-filter="can_bottle">캔·병류</button>
+                  <button type="button" class="seg-btn" data-tricky-filter="paper">종이류</button>
+                </div>
+              </div>
+            </div>
+            <div id="tricky-list"></div>
+          </div>
+        </section>
+
+        <!-- Scan History -->
+        <section id="history">
+          <div class="card">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #eceee9;">
+              <div>
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700;">최근 판별 기록</h2>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--muted);">
+                  현재 브라우저(localStorage)에 최대 18건까지 자동 저장됩니다.
+                </p>
+              </div>
+              <button type="button" id="clear-history-btn" class="btn btn-danger-outline">전체 비우기</button>
+            </div>
+            <div id="history-container" style="margin-top: 16px;"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- VIEW 2: CHESS -->
+      <div id="view-chess" class="hidden">
+        <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px;">
+          <div>
+            <button type="button" id="chess-back-btn" class="link-btn" style="margin-bottom: 8px; display: inline-flex; align-items: center; gap: 6px;">
+              ← 쓰레기 판별기로 돌아가기
+            </button>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">
+              그린렌즈 체스 라운지
+            </h1>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: var(--muted);">
+              AI 봇 대결 또는 2인 번갈아 두기 · 무료 플랜 월 20판 무료 · 월 무제한 플랜 회원은 무제한 무료
+            </p>
+          </div>
+
+          <div class="quota-box">
+            <div id="chess-quota-content"></div>
+            <button type="button" id="chess-open-plan-btn" class="btn btn-dark">무제한 플랜</button>
+          </div>
+        </div>
+
+        <div id="chess-limit-banner" class="alert-error hidden" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+          <span>이번 달 무료 체스 20판을 모두 사용했습니다. 월 무제한 플랜 이용 시 체스도 무제한 무료입니다.</span>
+          <button type="button" id="chess-banner-plan-btn" class="btn btn-primary">이용권 코드 입력하기</button>
+        </div>
+
+        <div class="chess-grid">
+          <!-- Board Column -->
+          <div class="card">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 28px; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;">
+                <span id="chess-top-label">AI 봇 (흑)</span>
+                <span id="chess-top-adv" class="mono" style="color: var(--brand);"></span>
+              </div>
+              <div id="chess-top-captured" style="display: flex; align-items: center; gap: 2px; flex-wrap: wrap;"></div>
+            </div>
+
+            <div class="board-frame">
+              <div id="chess-board" class="board-squares"></div>
+
+              <!-- Title Overlay -->
+              <div id="chess-title-overlay" class="board-overlay">
+                <div class="overlay-card">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: #e9f3ee; color: var(--brand); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+                    </svg>
+                  </div>
+                  <h2 style="margin: 0; font-size: 18px; font-weight: 700;">체스 대국을 시작할까요?</h2>
+                  <p style="margin: 8px 0 18px 0; font-size: 12px; color: var(--muted); line-height: 1.55;">
+                    오른쪽에서 대국 방식과 난이도를 고른 뒤 시작 버튼을 누르면 1판이 시작됩니다.
+                  </p>
+                  <button type="button" id="chess-overlay-start-btn" class="btn btn-primary" style="width: 100%; min-height: 44px; font-size: 14px;">
+                    새 대국 시작하기
+                  </button>
+                </div>
+              </div>
+
+              <!-- Promotion Overlay -->
+              <div id="chess-promo-overlay" class="board-overlay hidden">
+                <div class="overlay-card" style="max-width: 300px;">
+                  <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700;">폰 승진 기물을 선택하세요</p>
+                  <div id="chess-promo-choices" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;"></div>
+                </div>
+              </div>
+
+              <!-- Game Over Overlay -->
+              <div id="chess-gameover-overlay" class="board-overlay hidden">
+                <div class="overlay-card">
+                  <p style="margin: 0; font-size: 12px; font-weight: 600; color: var(--brand);">대국 종료</p>
+                  <h2 id="chess-winner-text" style="margin: 4px 0 0 0; font-size: 20px; font-weight: 700;"></h2>
+                  <p id="chess-end-reason" style="margin: 8px 0 18px 0; font-size: 12px; color: var(--muted);"></p>
+                  <button type="button" id="chess-overlay-restart-btn" class="btn btn-primary" style="width: 100%; min-height: 44px; font-size: 14px;">
+                    다시 대국하기
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; margin-top: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;">
+                <span id="chess-bottom-label">백 (White)</span>
+                <span id="chess-bottom-adv" class="mono" style="color: var(--brand);"></span>
+                <div id="chess-bottom-captured" style="display: flex; align-items: center; gap: 2px; flex-wrap: wrap;"></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" id="chess-flip-btn" class="btn btn-outline">보드 회전</button>
+                <button type="button" id="chess-mute-btn" class="btn btn-outline">효과음 켜짐</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls & Move Log Column -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="card">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #eceee9;">
+                <div>
+                  <p style="margin: 0; font-size: 12px; color: var(--muted);">현재 대국 상태</p>
+                  <h2 id="chess-status-heading" style="margin: 4px 0 0 0; font-size: 17px; font-weight: 700;">대국 설정 대기 중</h2>
+                </div>
+                <span id="chess-move-count" class="mono" style="font-size: 12px; color: var(--muted);">1수</span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+                <div>
+                  <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600;">대국 방식</p>
+                  <div class="segmented">
+                    <button type="button" class="seg-btn active" data-chess-mode="bot">AI 봇 대결</button>
+                    <button type="button" class="seg-btn" data-chess-mode="local">2인 번갈아 두기</button>
+                  </div>
+                </div>
+
+                <div id="chess-bot-options" style="display: flex; flex-direction: column; gap: 14px;">
+                  <div>
+                    <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600;">AI 난이도</p>
+                    <div class="segmented three">
+                      <button type="button" class="seg-btn" data-chess-diff="easy">입문</button>
+                      <button type="button" class="seg-btn active" data-chess-diff="medium">표준</button>
+                      <button type="button" class="seg-btn" data-chess-diff="hard">도전</button>
+                    </div>
+                  </div>
+                  <div>
+                    <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600;">내 진영</p>
+                    <div class="segmented">
+                      <button type="button" class="seg-btn active" data-chess-side="w">백 (선공)</button>
+                      <button type="button" class="seg-btn" data-chess-side="b">흑 (후공)</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid #eceee9;">
+                  <button type="button" id="chess-start-btn" class="btn btn-primary" style="flex: 1; min-height: 42px;">
+                    대국 시작
+                  </button>
+                  <button type="button" id="chess-resign-btn" class="btn btn-danger-outline hidden" style="min-height: 42px;">
+                    기권하기
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid #eceee9;">
+                <h3 style="margin: 0; font-size: 14px; font-weight: 700;">기보 기록</h3>
+                <span id="chess-ply-total" class="mono" style="font-size: 12px; color: var(--muted);">총 0수</span>
+              </div>
+              <div id="chess-move-log" style="margin-top: 12px; max-height: 240px; overflow-y: auto;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: ADMIN -->
+      <div id="view-admin" class="hidden">
+        <!-- Admin Login / Initial Registration -->
+        <section id="admin-auth-box" style="max-width: 480px; margin: 24px auto;">
+          <button type="button" id="admin-auth-back-btn" class="link-btn" style="margin-bottom: 16px;">
+            ← 분류 스캐너로 돌아가기
+          </button>
+          <div class="card">
+            <h1 id="admin-auth-title" style="margin: 0; font-size: 20px; font-weight: 700;">관리자 번호 초기 등록</h1>
+            <p id="admin-auth-desc" style="margin: 8px 0 18px 0; font-size: 13px; color: var(--muted);">
+              사용할 관리자 번호(4자 이상)를 1회 등록하면 관리자 콘솔에서 무제한 이용권 코드를 발급하고 이용자 한도를 관리할 수 있습니다.
+            </p>
+            <form id="admin-auth-form" style="display: flex; flex-direction: column; gap: 14px;">
+              <div>
+                <label for="admin-passcode-input" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">
+                  관리자 번호 (4자 이상)
+                </label>
+                <input
+                  id="admin-passcode-input"
+                  type="password"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  class="input-text mono"
+                  placeholder="예: 2010"
+                />
+              </div>
+              <div id="admin-auth-error" class="alert-error hidden"></div>
+              <button type="submit" id="admin-auth-submit" class="btn btn-primary" style="min-height: 44px; font-size: 14px;">
+                관리자 콘솔 접속하기
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Admin Console Dashboard -->
+        <section id="admin-console-box" class="hidden" style="display: flex; flex-direction: column; gap: 24px;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--border);">
+            <div>
+              <button type="button" id="admin-back-btn" class="link-btn" style="margin-bottom: 6px;">
+                ← 분류 스캐너로 돌아가기
+              </button>
+              <h1 style="margin: 0; font-size: 26px; font-weight: 700;">관리자 통합 콘솔</h1>
+              <p class="mono" style="margin: 4px 0 0 0; font-size: 12px; color: var(--muted);">
+                정적 단일 파일(index.html) · 실제 결제 비활성화 · 이용권 코드 발급 및 한도 제어
+              </p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <button type="button" id="admin-clear-logs-btn" class="btn btn-danger-outline">로그 초기화</button>
+              <button type="button" id="admin-reset-passcode-btn" class="btn btn-outline">관리자 번호 재설정</button>
+              <button type="button" id="admin-logout-btn" class="btn btn-dark">잠금 / 로그아웃</button>
+            </div>
+          </div>
+
+          <!-- Voucher Code Issuance & Plan Management -->
+          <div class="card">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid #eceee9;">
+              <div>
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700;">
+                  월 무제한 이용권 코드 발급 및 이용자 한도 관리
+                </h2>
+                <p id="admin-policy-summary" class="mono" style="margin: 4px 0 0 0; font-size: 12px; color: var(--muted);"></p>
+              </div>
+              <button type="button" id="admin-issue-voucher-btn" class="btn btn-primary">
+                + 무제한 이용권 코드 발급 (UNLIM)
+              </button>
+            </div>
+
+            <div id="admin-vouchers-area" style="margin-top: 16px;"></div>
+
+            <div class="table-wrap" style="margin-top: 20px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>이용자 ID</th>
+                    <th>현재 요금제</th>
+                    <th>기준월 / 만료일</th>
+                    <th style="text-align: right;">당월 판별 · 체스 이용</th>
+                    <th style="text-align: right;">관리</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-client-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Event Logs -->
+          <div class="card">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #eceee9;">
+              <h2 id="admin-log-title" style="margin: 0; font-size: 16px; font-weight: 700;">이벤트 로그</h2>
+              <div class="segmented" style="grid-template-columns: repeat(4, auto);">
+                <button type="button" class="seg-btn active" data-log-filter="ALL">ALL</button>
+                <button type="button" class="seg-btn" data-log-filter="INFO">INFO</button>
+                <button type="button" class="seg-btn" data-log-filter="WARN">WARN</button>
+                <button type="button" class="seg-btn" data-log-filter="ERROR">ERROR</button>
+              </div>
+            </div>
+            <div id="admin-log-list" style="max-height: 340px; overflow-y: auto;"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Plan & Voucher Modal -->
+    <div id="plan-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="plan-modal-title">
+      <div class="modal-panel">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #eceee9;">
+          <div>
+            <p style="margin: 0; font-size: 12px; font-weight: 500; color: var(--muted);">
+              월간 이용 요금제 안내 · 관리자 코드 전용 활성화
+            </p>
+            <h2 id="plan-modal-title" style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700;">
+              매월 20회 무료 · 월 9,900원 무제한
+            </h2>
+          </div>
+          <button type="button" id="close-plan-btn" class="btn btn-outline" aria-label="요금제 창 닫기">닫기</button>
+        </div>
+
+        <div id="plan-comparison-grid" class="plan-grid"></div>
+
+        <!-- Voucher Redemption (Active) -->
+        <form id="voucher-redeem-form" style="margin-top: 20px; padding: 18px; border-radius: 12px; background: var(--brand-soft); border: 1px solid rgba(19, 111, 74, 0.22);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <label for="voucher-code-input" style="font-size: 14px; font-weight: 700;">
+              관리자가 발급한 월 무제한 이용권 코드 입력
+            </label>
+            <span style="font-size: 12px; font-weight: 600; color: var(--brand);">즉시 적용</span>
+          </div>
+          <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--muted);">
+            실제 결제 없이 관리자 콘솔에서 발급한 코드(<span class="mono">UNLIM-...</span>)를 입력하면 즉시 1개월 무제한 플랜이 활성화됩니다.
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <input
+              id="voucher-code-input"
+              type="text"
+              class="input-text mono"
+              style="flex: 1; min-width: 200px; text-transform: uppercase; background: #fff;"
+              placeholder="예: UNLIM-A1B2-C3D4"
+            />
+            <button type="submit" class="btn btn-primary" style="min-height: 40px;">이용권 코드 적용</button>
+          </div>
+        </form>
+
+        <div id="plan-feedback-error" class="alert-error hidden" style="margin-top: 12px;"></div>
+        <div id="plan-feedback-success" class="alert-success hidden" style="margin-top: 12px;"></div>
+
+        <!-- Payment UI Preview Only (Actual Checkout Disabled) -->
+        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid #eceee9;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px;">
+            <div>
+              <h3 style="margin: 0; font-size: 14px; font-weight: 700;">결제 수단 화면 (미지원 · UI 형태만 제공)</h3>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--muted);">
+                실제 카드·간편결제 및 금전 거래는 비활성화되어 있습니다. 위의 관리자 이용권 코드를 사용해 주세요.
+              </p>
+            </div>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">9,900원 / 월 (결제 비활성)</span>
+          </div>
+
+          <div class="segmented" style="margin-bottom: 12px;">
+            <button type="button" class="seg-btn active" data-pay-preview="card">신용 · 체크카드</button>
+            <button type="button" class="seg-btn" data-pay-preview="easy_pay">간편결제 (카카오·토스)</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; opacity: 0.72;">
+            <div>
+              <label for="preview-provider-select" style="display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px;">
+                결제 수단 선택
+              </label>
+              <select id="preview-provider-select" class="input-text"></select>
+            </div>
+            <div id="preview-card-wrap">
+              <label for="preview-card-disabled" style="display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px;">
+                카드 번호
+              </label>
+              <input id="preview-card-disabled" type="text" disabled value="결제 기능 비활성화" class="input-text" />
+            </div>
+            <div>
+              <label for="preview-client-id" style="display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px;">
+                이용자 ID
+              </label>
+              <input id="preview-client-id" type="text" disabled class="input-text mono" />
+            </div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;">
+            <span style="font-size: 11px; color: var(--muted);">
+              실제 결제는 동작하지 않으며, 관리자 코드로만 무제한 전환이 가능합니다.
+            </span>
+            <button type="button" disabled class="btn" style="background: #d4d9d2; color: var(--muted);">
+              결제 기능 비활성화됨
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p style="margin: 0;">그린렌즈 — 단일 HTML 무빌드 버전 · 매월 20회 무료 · 월 무제한(코드 전용)</p>
+        <div class="footer-links">
+          <button type="button" class="link-btn" id="footer-download-html-btn" style="color: var(--brand); font-weight: 600;">index.html 다운로드</button>
+          <button type="button" class="link-btn" data-footer-nav="chess">체스 게임</button>
+          <button type="button" class="link-btn" id="footer-plan-btn">요금제 안내</button>
+          <button type="button" class="link-btn" data-footer-nav="admin">관리자 콘솔</button>
+          <a href="#top" class="link-btn" style="color: var(--ink);">맨 위로</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var PRISTINE_HTML_SNAPSHOT = '<!doctype html>\n' + document.documentElement.outerHTML;
+
+        // ============================================================
+        // 1. SAFE STORAGE & UTILITIES (Works cleanly under file://)
+        // ============================================================
+        var memoryFallback = {};
+        function readStorage(key, defaultVal) {
+          try {
+            var raw = window.localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : defaultVal;
+          } catch (e) {
+            return Object.prototype.hasOwnProperty.call(memoryFallback, key)
+              ? JSON.parse(memoryFallback[key])
+              : defaultVal;
+          }
+        }
+
+        function writeStorage(key, val) {
+          var serialized = JSON.stringify(val);
+          memoryFallback[key] = serialized;
+          try {
+            window.localStorage.setItem(key, serialized);
+          } catch (e) {
+            // Ignore storage quota / restricted file:// mode
+          }
+        }
+
+        function escapeHtml(str) {
+          return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        function getSeoulMonthKey(ts) {
+          try {
+            return new Intl.DateTimeFormat('en-CA', {
+              timeZone: 'Asia/Seoul',
+              year: 'numeric',
+              month: '2-digit',
+            }).format(new Date(ts || Date.now()));
+          } catch (e) {
+            var d = new Date(ts || Date.now());
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+          }
+        }
+
+        function addOneMonth(ms) {
+          var d = new Date(ms);
+          var orig = d.getDate();
+          d.setMonth(d.getMonth() + 1);
+          if (d.getDate() < orig) d.setDate(0);
+          return d.getTime();
+        }
+
+        function formatDate(ts) {
+          var d = new Date(ts);
+          return (
+            d.getFullYear() +
+            '.' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '.' +
+            String(d.getDate()).padStart(2, '0')
+          );
+        }
+
+        function formatTime(ts) {
+          var d = new Date(ts);
+          return (
+            String(d.getHours()).padStart(2, '0') +
+            ':' +
+            String(d.getMinutes()).padStart(2, '0') +
+            ':' +
+            String(d.getSeconds()).padStart(2, '0')
+          );
+        }
+
+        // Pure JS SHA-256 style deterministic hash (works even when crypto.subtle is unavailable under file://)
+        function hashPasscodeLocal(text) {
+          var salt = 'greenlens-static-v1::';
+          var str = salt + text;
+          var h1 = 0x811c9dc5;
+          var h2 = 0x9e3779b9;
+          for (var i = 0; i < str.length; i++) {
+            var ch = str.charCodeAt(i);
+            h1 ^= ch;
+            h1 = Math.imul(h1, 0x01000193);
+            h2 = Math.imul(h2 ^ ch, 0x85ebca6b);
+          }
+          return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
+        }
+
+        function copyText(text, onDone) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(
+              function () {
+                if (onDone) onDone(true);
+              },
+              function () {
+                fallbackCopy(text, onDone);
+              }
+            );
+          } else {
+            fallbackCopy(text, onDone);
+          }
+        }
+
+        function fallbackCopy(text, onDone) {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            if (onDone) onDone(ok);
+          } catch (e) {
+            if (onDone) onDone(false);
+          }
+        }
+
+        function detectDesktop() {
+          var ua = (navigator.userAgent || '').toLowerCase();
+          var isMob = /android|iphone|ipad|ipod|mobile/.test(ua);
+          var fine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+          return !isMob && (fine || window.innerWidth >= 1024);
+        }
+
+        // ============================================================
+        // 2. PLAN, QUOTA, VOUCHER & ADMIN STATE (localStorage)
+        // ============================================================
+        var STORE_KEY = 'greenlens_static_state_v1';
+        var HISTORY_KEY = 'greenlens_scan_history_v1';
+        var FREE_LIMIT = 20;
+        var CHESS_FREE_LIMIT = 20;
+
+        function createDefaultStore() {
+          var rand = Math.random().toString(36).slice(2, 10).toUpperCase();
+          return {
+            clientId: 'CLI-' + rand + '-' + String(Date.now()).slice(-4),
+            plan: 'free',
+            usageMonth: getSeoulMonthKey(),
+            usedCount: 0,
+            chessUsedCount: 0,
+            unlimitedExpiresAt: null,
+            upgradeMethod: null,
+            lastUsedAt: null,
+            adminPasscodeHash: null,
+            vouchers: [],
+            logs: [
+              {
+                id: 'init-1',
+                timestamp: Date.now(),
+                level: 'INFO',
+                message: '단일 HTML 정적 모드로 초기화되었습니다 (월간 판별 20회 · 체스 20판 무료).',
+              },
+            ],
+          };
+        }
+
+        var appStore = readStorage(STORE_KEY, null) || createDefaultStore();
+        var scanHistory = readStorage(HISTORY_KEY, []);
+        if (!Array.isArray(scanHistory)) scanHistory = [];
+
+        function syncStorePeriod() {
+          var now = Date.now();
+          var curMonth = getSeoulMonthKey(now);
+          if (appStore.usageMonth !== curMonth) {
+            appStore.usageMonth = curMonth;
+            appStore.usedCount = 0;
+            appStore.chessUsedCount = 0;
+          }
+          if (appStore.plan === 'unlimited' && appStore.unlimitedExpiresAt && appStore.unlimitedExpiresAt <= now) {
+            appStore.plan = 'free';
+            appStore.unlimitedExpiresAt = null;
+            appStore.upgradeMethod = null;
+          }
+          writeStorage(STORE_KEY, appStore);
+        }
+
+        function addLog(level, message) {
+          appStore.logs.unshift({
+            id: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            timestamp: Date.now(),
+            level: level,
+            message: message,
+          });
+          if (appStore.logs.length > 120) appStore.logs.length = 120;
+          writeStorage(STORE_KEY, appStore);
+        }
+
+        syncStorePeriod();
+
+        function getDaysRemaining() {
+          if (appStore.plan !== 'unlimited' || !appStore.unlimitedExpiresAt) return null;
+          return Math.max(0, Math.ceil((appStore.unlimitedExpiresAt - Date.now()) / 86400000));
+        }
+
+        // ============================================================
+        // 3. TRASH CLASSIFICATION KNOWLEDGE BASE & PIXEL ENGINE
+        // ============================================================
+        var CATEGORY_META = {
+          general: {
+            id: 'general',
+            label: '일반쓰레기',
+            binName: '종량제 봉투 배출',
+            coreRule: '이물질이나 음식물이 묻어 씻기 어렵거나, 복합 재질로 분리가 불가능하면 종량제 봉투에 버립니다.',
+            examples: ['오염된 휴지·물티슈', '기름 묻은 포장지', '깨진 유리·도자기', '감열지 영수증'],
+            commonMistake: '음식물이 묻은 피자 박스나 사용한 키친타월을 종이류로 버리면 전체 재활용이 오염됩니다.',
+          },
+          can_bottle: {
+            id: 'can_bottle',
+            label: '캔 · 병류',
+            binName: '캔류 / 유리병류 분리배출함',
+            coreRule: '내용물을 완전히 비우고 물로 헹군 뒤, 플라스틱 뚜껑이나 비닐 라벨을 제거해 배출합니다.',
+            examples: ['음료수 캔·맥주 캔', '통조림 캔', '투명·갈색·녹색 유리병', '잼·소스 유리병'],
+            commonMistake: '깨진 유리병이나 거울, 도자기류는 유리병류로 재활용할 수 없으므로 일반쓰레기로 배출해야 합니다.',
+          },
+          paper: {
+            id: 'paper',
+            label: '재활용 종이류',
+            binName: '종이류 분리배출함',
+            coreRule: '테이프, 택배 송장 스티커, 철제 호치키스 심 등 다른 재질을 제거하고 물기에 젖지 않게 펼쳐 배출합니다.',
+            examples: ['택배 골판지 상자', '신문지·전단지', '책자·노트(스프링 제거)', '종이 쇼핑백'],
+            commonMistake: '비닐 코팅된 전단지나 호일·비닐이 붙은 종이, 영수증은 종이류가 아닌 일반쓰레기입니다.',
+          },
+          other_recyclable: {
+            id: 'other_recyclable',
+            label: '기타 재활용품',
+            binName: '플라스틱 / 비닐류 전용함',
+            coreRule: '라벨과 뚜껑을 제거하고 내부를 깨끗이 헹구어 플라스틱·비닐류 전용 수거함에 배출합니다.',
+            examples: ['투명 페트병', '깨끗한 플라스틱 용기', '깨끗한 비닐 포장재', '흰색 스티로폼'],
+            commonMistake: '투명 페트병은 일반 플라스틱과 섞지 말고 라벨 제거 후 찌그러뜨려 배출해 주세요.',
+          },
+          not_trash: {
+            id: 'not_trash',
+            label: '판별 불가',
+            binName: '재촬영 또는 품목명 직접 검색',
+            coreRule: '품목 전체가 밝은 곳에서 잘 보이도록 다시 찍거나 아래 품목명 검색란을 이용해 주세요.',
+            examples: ['어두운 사진', '초점 흐림'],
+            commonMistake: '너무 어둡거나 흐린 사진은 재질 구분이 어렵습니다.',
+          },
+        };
+
+        var TRICKY_ITEMS = [
+          {
+            id: 'pizza-box-dirty',
+            name: '기름·치즈가 묻은 피자 박스',
+            category: 'general',
+            reason: '종이 섬유에 기름이 스며들면 재활용 펄프 공정에서 제거되지 않습니다.',
+            tip: '깨끗한 상단 뚜껑 부분만 찢어 종이류로 버리고, 오염된 바닥면은 일반쓰레기로 배출하세요.',
+          },
+          {
+            id: 'receipt',
+            name: '카드 영수증 · 대기표 (감열지)',
+            category: 'general',
+            reason: '특수 발색 화학 코팅이 되어 있어 일반 종이와 함께 재활용할 수 없습니다.',
+            tip: '모아서 종량제 봉투(일반쓰레기)에 버려주세요.',
+          },
+          {
+            id: 'broken-glass',
+            name: '깨진 유리병 · 도자기류',
+            category: 'general',
+            reason: '유리병 선별 작업자가 다칠 위험이 크고, 도자기는 유리와 녹는점이 달라 재활용 불가합니다.',
+            tip: '신문지 등으로 안전하게 감싼 뒤 종량제 봉투(일반쓰레기)에 배출하세요.',
+          },
+          {
+            id: 'tuna-can',
+            name: '기름이 남아있는 참치캔',
+            category: 'can_bottle',
+            reason: '금속 캔은 100% 재활용이 가능한 핵심 자원입니다.',
+            tip: '기름을 비우고 주방세제로 가볍게 헹군 뒤, 날카로운 뚜껑은 캔 안쪽에 넣어 배출하세요.',
+          },
+          {
+            id: 'butane-can',
+            name: '다 쓴 부탄가스 · 스프레이 캔',
+            category: 'can_bottle',
+            reason: '철/알루미늄 캔류에 해당하지만 잔여 가스가 폭발 위험을 일으킵니다.',
+            tip: '통풍이 잘 되는 실외에서 노즐을 눌러 가스를 완전히 뺀 뒤 캔류로 배출하세요.',
+          },
+          {
+            id: 'delivery-box',
+            name: '비닐 테이프가 붙은 택배 상자',
+            category: 'paper',
+            reason: '골판지 자체는 최상급 재활용 종이지만 테이프와 송장은 이물질이 됩니다.',
+            tip: '비닐 테이프와 운송장 스티커를 모두 떼어낸 후 납작하게 접어 종이류로 배출하세요.',
+          },
+          {
+            id: 'milk-carton',
+            name: '우유팩 · 두유 멸균팩',
+            category: 'paper',
+            reason: '고급 천연 펄프로 만들어져 일반 폐지와 분리해 재활용하면 가치가 높습니다.',
+            tip: '물을 헹구어 펼친 뒤 말려서 종이팩 전용함(없다면 종이류)으로 분리배출하세요.',
+          },
+          {
+            id: 'wet-tissue',
+            name: '물티슈 · 사용한 키친타월',
+            category: 'general',
+            reason: '물티슈는 종이가 아니라 플라스틱(폴리에스터) 부직포이며, 사용된 휴지는 위생상 재활용이 불가합니다.',
+            tip: '반드시 일반쓰레기(종량제 봉투)로 버려주세요.',
+          },
+        ];
+
+        var KEYWORD_RULES = [
+          {
+            keywords: ['알루미늄', '캔', '맥주캔', '음료캔', '콜라캔', '사이다캔', '참치캔', '통조림', '스팸', '부탄가스', '스프레이', '에어로졸', 'can', 'soda'],
+            primaryCategory: 'can_bottle',
+            itemName: '금속 캔류 (음료·통조림·에어로졸)',
+            confidence: 95,
+            summary: '내용물을 비우고 헹군 뒤 캔류 분리수거함에 배출하세요.',
+            reason: '알루미늄 및 철 재질의 금속 캔으로 100% 재활용이 가능한 품목입니다.',
+            steps: ['내용물을 완전히 비우고 물로 가볍게 헹구세요.', '플라스틱 뚜껑이나 라벨을 분리하세요.', '부탄가스·스프레이는 환기되는 야외에서 잔여 가스를 뺀 뒤 배출하세요.'],
+            caution: '참치캔의 날카로운 뚜껑은 캔 안쪽으로 접어 넣어 수거 작업자의 부상을 예방하세요.',
+          },
+          {
+            keywords: ['유리병', '소주병', '맥주병', '와인병', '잼병', '소스병', '음료병', '병', 'bottle', 'glass'],
+            primaryCategory: 'can_bottle',
+            itemName: '유리병류',
+            confidence: 94,
+            summary: '깨지지 않은 유리병은 뚜껑을 분리해 유리병류로 배출하세요.',
+            reason: '투명·갈색·녹색 유리병은 세척 후 재사용 또는 유리 원료로 재활용됩니다.',
+            steps: ['병 안의 내용물을 비우고 물로 깨끗이 헹구세요.', '금속·플라스틱 병뚜껑과 비닐 라벨을 제거하세요.', '깨지지 않도록 유리병 전용 수거함에 넣어 배출하세요.'],
+            caution: '깨진 유리, 거울, 도자기, 내열유리 냄비 뚜껑은 유리병류가 아닌 일반쓰레기입니다.',
+          },
+          {
+            keywords: ['깨진유리', '깨진 유리', '도자기', '머그컵', '접시', '거울', '전구', 'broken'],
+            primaryCategory: 'general',
+            itemName: '깨진 유리 · 도자기 · 거울류',
+            confidence: 96,
+            summary: '신문지로 감싼 뒤 종량제 봉투(일반쓰레기)로 배출하세요.',
+            reason: '깨진 유리나 도자기·거울은 유리병 재활용 공정에 혼합될 수 없습니다.',
+            steps: ['날카로운 파편에 다치지 않도록 신문지나 두꺼운 종이로 여러 겹 감싸세요.', '종량제 봉투에 넣고 겉면에 깨진 유리 주의를 표시해 배출하세요.'],
+            caution: '절대 유리병류 수거함에 섞어 버리지 마세요.',
+          },
+          {
+            keywords: ['피자박스', '피자', '기름', '음식물묻은', 'pizza'],
+            primaryCategory: 'general',
+            itemName: '기름·음식물이 묻은 피자 박스',
+            confidence: 95,
+            summary: '기름에 오염된 바닥면은 일반쓰레기(종량제 봉투)로 버려주세요.',
+            reason: '종이 섬유에 기름이나 치즈가 스며들면 펄프 재활용 공정에서 정제가 불가능합니다.',
+            steps: ['기름이 묻지 않은 깨끗한 상단 뚜껑만 찢어 종이류로 분리하세요.', '기름과 치즈가 묻은 바닥면·속지는 종량제 봉투에 버리세요.'],
+            caution: '오염된 상자 전체를 종이류에 넣으면 주변 깨끗한 폐지까지 재활용 불가 상태가 됩니다.',
+          },
+          {
+            keywords: ['영수증', '감열지', '대기표', '은행표', '코팅지', 'receipt'],
+            primaryCategory: 'general',
+            itemName: '영수증 · 감열지 · 코팅 종이',
+            confidence: 96,
+            summary: '감열지와 비닐 코팅지는 종이류가 아닌 일반쓰레기입니다.',
+            reason: '발색 화학 코팅이나 비닐 필름이 합지되어 있어 종이 펄프로 분해되지 않습니다.',
+            steps: ['종이류 수거함에 섞지 말고 종량제 봉투에 모아 배출하세요.'],
+            caution: '겉보기에 종이 같아도 손톱으로 그어 검게 변하는 영수증은 모두 일반쓰레기입니다.',
+          },
+          {
+            keywords: ['휴지', '물티슈', '키친타월', '기저귀', '생리대', '마스크', 'tissue', 'wipe'],
+            primaryCategory: 'general',
+            itemName: '사용한 휴지 · 물티슈 · 위생용품',
+            confidence: 97,
+            summary: '물티슈와 사용한 휴지는 반드시 일반쓰레기(종량제 봉투)로 버리세요.',
+            reason: '물티슈는 플라스틱 합성섬유 부직포이며, 사용된 휴지는 위생·오염 문제로 재활용할 수 없습니다.',
+            steps: ['물기를 최대한 짜낸 뒤 종량제 봉투에 담아 배출하세요.'],
+            caution: '물티슈를 변기에 버리면 배관 막힘의 원인이 됩니다.',
+          },
+          {
+            keywords: ['택배박스', '택배상자', '박스', '골판지', '신문지', '책', '노트', '종이', '쇼핑백', '전단지', 'box', 'paper', 'cardboard'],
+            primaryCategory: 'paper',
+            itemName: '깨끗한 종이류 (택배 상자 · 신문 · 책자)',
+            confidence: 93,
+            summary: '테이프·송장·스프링을 제거한 뒤 납작하게 접어 종이류로 배출하세요.',
+            reason: '이물질과 물기가 없는 깨끗한 종이와 골판지는 고품질 재생 펄프로 재활용됩니다.',
+            steps: ['비닐 테이프, 운송장 스티커, 철제 스테이플러·스프링을 모두 제거하세요.', '상자는 납작하게 펼쳐 물에 젖지 않게 묶어 종이류함에 배출하세요.'],
+            caution: '비닐 코팅된 책 표지나 음식물·기름이 묻은 종이는 일반쓰레기로 따로 분리하세요.',
+          },
+          {
+            keywords: ['우유팩', '두유팩', '멸균팩', '종이팩', '주스팩'],
+            primaryCategory: 'paper',
+            itemName: '종이팩 (우유팩 · 멸균팩)',
+            confidence: 94,
+            summary: '물로 헹구고 펼쳐 말린 뒤 종이팩 전용함(또는 종이류)으로 배출하세요.',
+            reason: '우유팩은 최고급 천연 펄프로 만들어져 일반 폐지와 구분하면 고급 화장지 등으로 재탄생합니다.',
+            steps: ['내용물을 비우고 물로 깨끗이 헹구세요.', '가위로 자르거나 펼쳐 말린 뒤 종이팩 수거함에 배출하세요.'],
+            caution: '플라스틱 빨대 및 마개는 반드시 제거해 분리 배출하세요.',
+          },
+          {
+            keywords: ['페트병', '생수병', '플라스틱', '비닐', '라면봉지', '과자봉지', '스티로폼', '배달용기', 'pet', 'plastic'],
+            primaryCategory: 'other_recyclable',
+            itemName: '플라스틱 · 페트병 · 비닐류 (기타 재활용품)',
+            confidence: 92,
+            summary: '내용물을 비우고 라벨을 제거한 뒤 플라스틱/비닐류 전용함에 배출하세요.',
+            reason: '일반쓰레기나 캔·병·종이류가 아닌 별도 재활용(플라스틱·비닐) 대상 품목입니다.',
+            steps: ['내부 이물질을 물로 깨끗이 헹구세요(세척 불가한 오염 용기는 일반쓰레기).', '투명 페트병은 라벨을 떼고 찌그러뜨린 뒤 뚜껑을 닫아 투명 페트 전용함에 넣으세요.', '비닐류는 이물질이 없도록 털어 비닐 전용 봉투에 배출하세요.'],
+            caution: '빨간 양념이나 기름기가 씻기지 않은 배달 용기는 일반쓰레기로 버려야 합니다.',
+          },
+        ];
+
+        function classifyByKeywordText(text) {
+          var q = String(text || '').trim().toLowerCase();
+          if (!q) return null;
+          for (var i = 0; i < KEYWORD_RULES.length; i++) {
+            var rule = KEYWORD_RULES[i];
+            for (var j = 0; j < rule.keywords.length; j++) {
+              if (q.indexOf(rule.keywords[j].toLowerCase()) !== -1) {
+                return {
+                  primaryCategory: rule.primaryCategory,
+                  categoryLabel: CATEGORY_META[rule.primaryCategory].label,
+                  itemName: rule.itemName,
+                  confidence: rule.confidence,
+                  summary: rule.summary,
+                  reason: rule.reason,
+                  disposalSteps: rule.steps,
+                  caution: rule.caution,
+                  sourceNote: '품목 키워드 분석',
+                };
+              }
+            }
+          }
+          return {
+            primaryCategory: 'general',
+            categoryLabel: CATEGORY_META.general.label,
+            itemName: text.trim() + ' (일반/혼합 추정)',
+            confidence: 72,
+            summary: '재질 확인이 어렵거나 복합·오염 가능성이 있어 종량제 봉투(일반쓰레기) 기준을 우선 확인하세요.',
+            reason: '입력하신 품목명이 단일 재활용 기준(캔·병·깨끗한 종이)에 명확히 매칭되지 않았습니다.',
+            disposalSteps: [
+              '단일 금속 캔·유리병이라면 세척 후 캔·병류로, 깨끗한 종이라면 종이류로 분리하세요.',
+              '음식물이 묻었거나 여러 재질이 섞여 분리가 어렵다면 종량제 봉투에 배출하세요.',
+            ],
+            caution: '아래 [헷갈리기 쉬운 품목 빠른 비교]에서 유사 품목을 검색하거나 결과에서 카테고리를 직접 교정할 수 있습니다.',
+            sourceNote: '일반 안전 기준',
+          };
+        }
+
+        function analyzeImagePixelsAndFilename(imgEl, filenameHint, presetCategory) {
+          if (presetCategory && CATEGORY_META[presetCategory]) {
+            var presetKeyword =
+              presetCategory === 'can_bottle'
+                ? '알루미늄 캔 유리병'
+                : presetCategory === 'paper'
+                  ? '택배 상자 신문지'
+                  : '피자 기름 휴지';
+            var out = classifyByKeywordText(presetKeyword);
+            out.confidence = 96;
+            out.sourceNote = '예시 이미지 판별';
+            return out;
+          }
+
+          if (filenameHint) {
+            var byName = classifyByKeywordText(filenameHint);
+            if (byName && byName.confidence >= 90) {
+              byName.sourceNote = '파일명 + 이미지 특징 분석';
+              return byName;
+            }
+          }
+
+          // Offscreen canvas visual feature extraction (100% local, zero server needed)
+          try {
+            var cw = 96;
+            var ch = 96;
+            var canvas = document.createElement('canvas');
+            canvas.width = cw;
+            canvas.height = ch;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(imgEl, 0, 0, cw, ch);
+            var data = ctx.getImageData(0, 0, cw, ch).data;
+
+            var total = cw * ch;
+            var sumL = 0;
+            var sumSat = 0;
+            var brightWhite = 0;
+            var metallicSilver = 0;
+            var kraftWarm = 0;
+            var coolBlueGreen = 0;
+            var darkOrGreasy = 0;
+
+            for (var p = 0; p < data.length; p += 4) {
+              var r = data[p];
+              var g = data[p + 1];
+              var b = data[p + 2];
+              var max = Math.max(r, g, b);
+              var min = Math.min(r, g, b);
+              var lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+              var sat = max === 0 ? 0 : (max - min) / max;
+
+              sumL += lum;
+              sumSat += sat;
+
+              if (lum > 0.8 && sat < 0.14) brightWhite++;
+              if (lum >= 0.45 && lum <= 0.82 && sat < 0.12) metallicSilver++;
+              if (r > g + 14 && g > b + 12 && lum > 0.35 && lum < 0.78) kraftWarm++;
+              if ((b > r + 15 || g > r + 12) && sat > 0.18) coolBlueGreen++;
+              if (lum < 0.28 || (sat > 0.45 && r > b + 25 && lum < 0.5)) darkOrGreasy++;
+            }
+
+            var avgL = sumL / total;
+            var metallicRatio = metallicSilver / total;
+            var kraftRatio = kraftWarm / total;
+            var whiteRatio = brightWhite / total;
+            var coolRatio = coolBlueGreen / total;
+            var darkRatio = darkOrGreasy / total;
+
+            var chosen = 'general';
+            var itemLabel = '오염 또는 복합 재질 쓰레기';
+            var conf = 78;
+
+            if (avgL < 0.08) {
+              chosen = 'not_trash';
+              itemLabel = '매우 어두운 이미지';
+              conf = 64;
+            } else if (kraftRatio > 0.2 || (whiteRatio > 0.38 && darkRatio < 0.16)) {
+              chosen = 'paper';
+              itemLabel = kraftRatio > 0.2 ? '골판지 상자 · 종이류 추정' : '깨끗한 종이 · 인쇄물 추정';
+              conf = 84;
+            } else if (metallicRatio > 0.24 || (coolRatio > 0.16 && metallicRatio > 0.12)) {
+              chosen = 'can_bottle';
+              itemLabel = coolRatio > 0.18 ? '유리병 · 음료 캔 추정' : '금속 캔류 추정';
+              conf = 83;
+            } else if (coolRatio > 0.28 && darkRatio < 0.2) {
+              chosen = 'other_recyclable';
+              itemLabel = '페트병 · 플라스틱 용기 추정';
+              conf = 80;
+            } else {
+              chosen = 'general';
+              itemLabel = '일반쓰레기 (오염·복합 재질 추정)';
+              conf = 79;
+            }
+
+            var meta = CATEGORY_META[chosen];
+            return {
+              primaryCategory: chosen,
+              categoryLabel: meta.label,
+              itemName: itemLabel,
+              confidence: conf,
+              summary: meta.coreRule,
+              reason:
+                chosen === 'paper'
+                  ? '종이·골판지 특유의 밝고 균일한 표면 색상 비율이 높게 감지되었습니다.'
+                  : chosen === 'can_bottle'
+                    ? '금속성 무채색 반사 또는 병류 특유의 청·녹색 광택 비율이 감지되었습니다.'
+                    : chosen === 'other_recyclable'
+                      ? '투명·청색 계열의 플라스틱 포장재 색상 특성이 감지되었습니다.'
+                      : chosen === 'not_trash'
+                        ? '전체 화면이 너무 어두워 재질을 정확히 판단하기 어렵습니다.'
+                        : '단일 재활용 재질보다 어둡거나 복합적인 색 분포가 높아 오염·일반쓰레기로 추정되었습니다.',
+              disposalSteps: [
+                meta.coreRule,
+                '실제 물품과 다르면 아래 [재질 직접 교정] 버튼을 눌러 정확한 안내를 확인하세요.',
+              ],
+              caution: meta.commonMistake,
+              sourceNote: '브라우저 로컬 이미지 분석',
+            };
+          } catch (err) {
+            var fallback = CATEGORY_META.general;
+            return {
+              primaryCategory: 'general',
+              categoryLabel: fallback.label,
+              itemName: '분류된 생활 쓰레기',
+              confidence: 70,
+              summary: fallback.coreRule,
+              reason: '브라우저 로컬 분석 결과에 따라 기본 배출 기준을 안내합니다.',
+              disposalSteps: [fallback.coreRule],
+              caution: fallback.commonMistake,
+              sourceNote: '로컬 기본 분석',
+            };
+          }
+        }
+
+        function createSampleDataUrl(kind) {
+          var c = document.createElement('canvas');
+          c.width = 480;
+          c.height = 320;
+          var ctx = c.getContext('2d');
+
+          if (kind === 'can_bottle') {
+            ctx.fillStyle = '#E6F4F1';
+            ctx.fillRect(0, 0, 480, 320);
+            // Aluminum can
+            var grad = ctx.createLinearGradient(110, 80, 210, 80);
+            grad.addColorStop(0, '#94A3B8');
+            grad.addColorStop(0.5, '#E2E8F0');
+            grad.addColorStop(1, '#64748B');
+            ctx.fillStyle = grad;
+            ctx.fillRect(110, 90, 96, 175);
+            ctx.fillStyle = '#0F766E';
+            ctx.fillRect(110, 140, 96, 65);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('CAN', 136, 180);
+            // Green glass bottle
+            ctx.fillStyle = '#15803D';
+            ctx.fillRect(280, 115, 78, 150);
+            ctx.fillRect(302, 58, 34, 60);
+            ctx.fillStyle = '#BBF7D0';
+            ctx.fillRect(290, 155, 58, 52);
+          } else if (kind === 'paper') {
+            ctx.fillStyle = '#FEF3C7';
+            ctx.fillRect(0, 0, 480, 320);
+            // Cardboard kraft box
+            ctx.fillStyle = '#C68B59';
+            ctx.fillRect(70, 95, 200, 165);
+            ctx.fillStyle = '#A47148';
+            ctx.fillRect(70, 95, 200, 34);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(105, 155, 86, 48);
+            // Clean white sheets
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(295, 72, 120, 188);
+            ctx.fillStyle = '#D6D3D1';
+            ctx.fillRect(312, 100, 86, 8);
+            ctx.fillRect(312, 122, 70, 8);
+            ctx.fillRect(312, 144, 82, 8);
+          } else {
+            ctx.fillStyle = '#E2E8F0';
+            ctx.fillRect(0, 0, 480, 320);
+            // Oily pizza box / mixed general waste
+            ctx.fillStyle = '#B45309';
+            ctx.fillRect(75, 100, 210, 150);
+            ctx.fillStyle = '#451A03';
+            ctx.beginPath();
+            ctx.arc(175, 175, 48, 0, Math.PI * 2);
+            ctx.fill();
+            // Crumpled wet tissue
+            ctx.fillStyle = '#CBD5E1';
+            ctx.beginPath();
+            ctx.arc(345, 195, 54, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#64748B';
+            ctx.beginPath();
+            ctx.arc(335, 185, 16, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          return c.toDataURL('image/png');
+        }
+
+        // ============================================================
+        // 4. FULL CHESS ENGINE & AI BOT (Pure Vanilla JS)
+        // ============================================================
+        var FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        var PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        var PST = {
+          p: [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5, 5, 10, 25, 25, 10, 5, 5],
+            [0, 0, 0, 20, 20, 0, 0, 0],
+            [5, -5, -10, 0, 0, -10, -5, 5],
+            [5, 10, 10, -20, -20, 10, 10, 5],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+          ],
+          n: [
+            [-50, -40, -30, -30, -30, -30, -40, -50],
+            [-40, -20, 0, 0, 0, 0, -20, -40],
+            [-30, 0, 10, 15, 15, 10, 0, -30],
+            [-30, 5, 15, 20, 20, 15, 5, -30],
+            [-30, 0, 15, 20, 20, 15, 0, -30],
+            [-30, 5, 10, 15, 15, 10, 5, -30],
+            [-40, -20, 0, 5, 5, 0, -20, -40],
+            [-50, -40, -30, -30, -30, -30, -40, -50],
+          ],
+          b: [
+            [-20, -10, -10, -10, -10, -10, -10, -20],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-10, 0, 5, 10, 10, 5, 0, -10],
+            [-10, 5, 5, 10, 10, 5, 5, -10],
+            [-10, 0, 10, 10, 10, 10, 0, -10],
+            [-10, 10, 10, 10, 10, 10, 10, -10],
+            [-10, 5, 0, 0, 0, 0, 5, -10],
+            [-20, -10, -10, -10, -10, -10, -10, -20],
+          ],
+          r: [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [5, 10, 10, 10, 10, 10, 10, 5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [0, 0, 0, 5, 5, 0, 0, 0],
+          ],
+          q: [
+            [-20, -10, -10, -5, -5, -10, -10, -20],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-10, 0, 5, 5, 5, 5, 0, -10],
+            [-5, 0, 5, 5, 5, 5, 0, -5],
+            [0, 0, 5, 5, 5, 5, 0, -5],
+            [-10, 5, 5, 5, 5, 5, 0, -10],
+            [-10, 0, 5, 0, 0, 0, 0, -10],
+            [-20, -10, -10, -5, -5, -10, -10, -20],
+          ],
+          k: [
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-20, -30, -30, -40, -40, -30, -30, -20],
+            [-10, -20, -20, -20, -20, -20, -20, -10],
+            [20, 20, 0, 0, 0, 0, 20, 20],
+            [20, 30, 10, 0, 0, 10, 30, 20],
+          ],
+        };
+
+        function createInitialChessPos() {
+          var back = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+          var board = [];
+          for (var r = 0; r < 8; r++) {
+            var row = [];
+            for (var c = 0; c < 8; c++) {
+              if (r === 0) row.push({ color: 'b', type: back[c] });
+              else if (r === 1) row.push({ color: 'b', type: 'p' });
+              else if (r === 6) row.push({ color: 'w', type: 'p' });
+              else if (r === 7) row.push({ color: 'w', type: back[c] });
+              else row.push(null);
+            }
+            board.push(row);
+          }
+          return {
+            board: board,
+            turn: 'w',
+            castling: { wK: true, wQ: true, bK: true, bQ: true },
+            enPassant: null,
+            fullMoveNumber: 1,
+          };
+        }
+
+        function cloneBoard(b) {
+          return b.map(function (row) {
+            return row.map(function (cell) {
+              return cell ? { color: cell.color, type: cell.type } : null;
+            });
+          });
+        }
+
+        function inBounds(r, c) {
+          return r >= 0 && r < 8 && c >= 0 && c < 8;
+        }
+
+        function sqName(r, c) {
+          return FILES[c] + String(8 - r);
+        }
+
+        function findKing(board, color) {
+          for (var r = 0; r < 8; r++) {
+            for (var c = 0; c < 8; c++) {
+              var p = board[r][c];
+              if (p && p.color === color && p.type === 'k') return [r, c];
+            }
+          }
+          return null;
+        }
+
+        function isSquareAttacked(board, tr, tc, byColor) {
+          var pawnDir = byColor === 'w' ? 1 : -1;
+          var dcList = [-1, 1];
+          for (var i = 0; i < 2; i++) {
+            var pr = tr + pawnDir;
+            var pc = tc + dcList[i];
+            if (inBounds(pr, pc) && board[pr][pc] && board[pr][pc].color === byColor && board[pr][pc].type === 'p') {
+              return true;
+            }
+          }
+          var kSteps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+          for (var k = 0; k < kSteps.length; k++) {
+            var nr = tr + kSteps[k][0];
+            var nc = tc + kSteps[k][1];
+            if (inBounds(nr, nc) && board[nr][nc] && board[nr][nc].color === byColor && board[nr][nc].type === 'n') {
+              return true;
+            }
+          }
+          for (var dr = -1; dr <= 1; dr++) {
+            for (var dc = -1; dc <= 1; dc++) {
+              if (dr === 0 && dc === 0) continue;
+              var kr = tr + dr;
+              var kc = tc + dc;
+              if (inBounds(kr, kc) && board[kr][kc] && board[kr][kc].color === byColor && board[kr][kc].type === 'k') {
+                return true;
+              }
+            }
+          }
+          var ortho = [[-1,0],[1,0],[0,-1],[0,1]];
+          for (var o = 0; o < 4; o++) {
+            var r = tr + ortho[o][0];
+            var c = tc + ortho[o][1];
+            while (inBounds(r, c)) {
+              var p = board[r][c];
+              if (p) {
+                if (p.color === byColor && (p.type === 'r' || p.type === 'q')) return true;
+                break;
+              }
+              r += ortho[o][0];
+              c += ortho[o][1];
+            }
+          }
+          var diag = [[-1,-1],[-1,1],[1,-1],[1,1]];
+          for (var d = 0; d < 4; d++) {
+            var r2 = tr + diag[d][0];
+            var c2 = tc + diag[d][1];
+            while (inBounds(r2, c2)) {
+              var p2 = board[r2][c2];
+              if (p2) {
+                if (p2.color === byColor && (p2.type === 'b' || p2.type === 'q')) return true;
+                break;
+              }
+              r2 += diag[d][0];
+              c2 += diag[d][1];
+            }
+          }
+          return false;
+        }
+
+        function isInCheck(board, color) {
+          var k = findKing(board, color);
+          if (!k) return false;
+          return isSquareAttacked(board, k[0], k[1], color === 'w' ? 'b' : 'w');
+        }
+
+        function generatePseudoMoves(pos) {
+          var moves = [];
+          var board = pos.board;
+          var turn = pos.turn;
+          var castling = pos.castling;
+          var ep = pos.enPassant;
+          var enemy = turn === 'w' ? 'b' : 'w';
+          var promos = ['q', 'r', 'b', 'n'];
+
+          for (var r = 0; r < 8; r++) {
+            for (var c = 0; c < 8; c++) {
+              var piece = board[r][c];
+              if (!piece || piece.color !== turn) continue;
+
+              if (piece.type === 'p') {
+                var dir = turn === 'w' ? -1 : 1;
+                var startRow = turn === 'w' ? 6 : 1;
+                var promoRow = turn === 'w' ? 0 : 7;
+                var r1 = r + dir;
+                if (inBounds(r1, c) && !board[r1][c]) {
+                  if (r1 === promoRow) {
+                    for (var pi = 0; pi < 4; pi++) moves.push({ from: [r, c], to: [r1, c], promotion: promos[pi] });
+                  } else {
+                    moves.push({ from: [r, c], to: [r1, c] });
+                    var r2 = r + dir * 2;
+                    if (r === startRow && inBounds(r2, c) && !board[r2][c]) {
+                      moves.push({ from: [r, c], to: [r2, c] });
+                    }
+                  }
+                }
+                var dcs = [-1, 1];
+                for (var di = 0; di < 2; di++) {
+                  var nc = c + dcs[di];
+                  if (!inBounds(r1, nc)) continue;
+                  var tgt = board[r1][nc];
+                  if (tgt && tgt.color === enemy) {
+                    if (r1 === promoRow) {
+                      for (var pj = 0; pj < 4; pj++) moves.push({ from: [r, c], to: [r1, nc], promotion: promos[pj] });
+                    } else {
+                      moves.push({ from: [r, c], to: [r1, nc] });
+                    }
+                  } else if (ep && ep[0] === r1 && ep[1] === nc) {
+                    moves.push({ from: [r, c], to: [r1, nc], isEnPassant: true });
+                  }
+                }
+              } else if (piece.type === 'n') {
+                var kSteps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+                for (var ki = 0; ki < 8; ki++) {
+                  var nr = r + kSteps[ki][0];
+                  var ncc = c + kSteps[ki][1];
+                  if (!inBounds(nr, ncc)) continue;
+                  var t = board[nr][ncc];
+                  if (!t || t.color === enemy) moves.push({ from: [r, c], to: [nr, ncc] });
+                }
+              } else if (piece.type === 'b' || piece.type === 'r' || piece.type === 'q') {
+                var dirs = [];
+                if (piece.type === 'b' || piece.type === 'q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+                if (piece.type === 'r' || piece.type === 'q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+                for (var dri = 0; dri < dirs.length; dri++) {
+                  var sr = r + dirs[dri][0];
+                  var sc = c + dirs[dri][1];
+                  while (inBounds(sr, sc)) {
+                    var target = board[sr][sc];
+                    if (!target) {
+                      moves.push({ from: [r, c], to: [sr, sc] });
+                    } else {
+                      if (target.color === enemy) moves.push({ from: [r, c], to: [sr, sc] });
+                      break;
+                    }
+                    sr += dirs[dri][0];
+                    sc += dirs[dri][1];
+                  }
+                }
+              } else if (piece.type === 'k') {
+                for (var kr = -1; kr <= 1; kr++) {
+                  for (var kc = -1; kc <= 1; kc++) {
+                    if (kr === 0 && kc === 0) continue;
+                    var rr = r + kr;
+                    var cc = c + kc;
+                    if (!inBounds(rr, cc)) continue;
+                    var kt = board[rr][cc];
+                    if (!kt || kt.color === enemy) moves.push({ from: [r, c], to: [rr, cc] });
+                  }
+                }
+                var home = turn === 'w' ? 7 : 0;
+                if (r === home && c === 4 && !isSquareAttacked(board, home, 4, enemy)) {
+                  var canK = turn === 'w' ? castling.wK : castling.bK;
+                  var canQ = turn === 'w' ? castling.wQ : castling.bQ;
+                  if (canK && !board[home][5] && !board[home][6] && board[home][7] && board[home][7].color === turn && board[home][7].type === 'r' && !isSquareAttacked(board, home, 5, enemy) && !isSquareAttacked(board, home, 6, enemy)) {
+                    moves.push({ from: [home, 4], to: [home, 6], isCastle: 'K' });
+                  }
+                  if (canQ && !board[home][1] && !board[home][2] && !board[home][3] && board[home][0] && board[home][0].color === turn && board[home][0].type === 'r' && !isSquareAttacked(board, home, 3, enemy) && !isSquareAttacked(board, home, 2, enemy)) {
+                    moves.push({ from: [home, 4], to: [home, 2], isCastle: 'Q' });
+                  }
+                }
+              }
+            }
+          }
+          return moves;
+        }
+
+        function execRawMove(pos, move) {
+          var board = cloneBoard(pos.board);
+          var fr = move.from[0], fc = move.from[1];
+          var tr = move.to[0], tc = move.to[1];
+          var moving = board[fr][fc];
+          var captured = board[tr][tc];
+          board[fr][fc] = null;
+
+          if (move.isEnPassant) {
+            var capRow = moving.color === 'w' ? tr + 1 : tr - 1;
+            captured = board[capRow][tc];
+            board[capRow][tc] = null;
+          }
+          if (move.isCastle === 'K') {
+            board[tr][5] = board[tr][7];
+            board[tr][7] = null;
+          } else if (move.isCastle === 'Q') {
+            board[tr][3] = board[tr][0];
+            board[tr][0] = null;
+          }
+
+          board[tr][tc] = move.promotion ? { color: moving.color, type: move.promotion } : { color: moving.color, type: moving.type };
+
+          var castling = { wK: pos.castling.wK, wQ: pos.castling.wQ, bK: pos.castling.bK, bQ: pos.castling.bQ };
+          if (moving.type === 'k') {
+            if (moving.color === 'w') { castling.wK = false; castling.wQ = false; }
+            else { castling.bK = false; castling.bQ = false; }
+          }
+          if (moving.type === 'r') {
+            if (fr === 7 && fc === 0) castling.wQ = false;
+            if (fr === 7 && fc === 7) castling.wK = false;
+            if (fr === 0 && fc === 0) castling.bQ = false;
+            if (fr === 0 && fc === 7) castling.bK = false;
+          }
+          if (tr === 7 && tc === 0) castling.wQ = false;
+          if (tr === 7 && tc === 7) castling.wK = false;
+          if (tr === 0 && tc === 0) castling.bQ = false;
+          if (tr === 0 && tc === 7) castling.bK = false;
+
+          var ep = null;
+          if (moving.type === 'p' && Math.abs(tr - fr) === 2) ep = [(fr + tr) / 2, fc];
+
+          return {
+            nextPos: {
+              board: board,
+              turn: pos.turn === 'w' ? 'b' : 'w',
+              castling: castling,
+              enPassant: ep,
+              fullMoveNumber: pos.turn === 'b' ? pos.fullMoveNumber + 1 : pos.fullMoveNumber,
+            },
+            captured: captured,
+          };
+        }
+
+        function getLegalMoves(pos) {
+          var pseudo = generatePseudoMoves(pos);
+          return pseudo.filter(function (m) {
+            return !isInCheck(execRawMove(pos, m).nextPos.board, pos.turn);
+          });
+        }
+
+        function hasInsufficientMaterial(board) {
+          var pieces = [];
+          for (var r = 0; r < 8; r++) {
+            for (var c = 0; c < 8; c++) {
+              var p = board[r][c];
+              if (p && p.type !== 'k') pieces.push({ color: p.color, type: p.type, r: r, c: c });
+            }
+          }
+          if (pieces.length === 0) return true;
+          if (pieces.length === 1 && (pieces[0].type === 'b' || pieces[0].type === 'n')) return true;
+          if (pieces.length === 2 && pieces[0].type === 'b' && pieces[1].type === 'b' && pieces[0].color !== pieces[1].color && (pieces[0].r + pieces[0].c) % 2 === (pieces[1].r + pieces[1].c) % 2) return true;
+          return false;
+        }
+
+        function getChessGameStatus(pos) {
+          var legal = getLegalMoves(pos);
+          var chk = isInCheck(pos.board, pos.turn);
+          if (legal.length === 0) return { status: chk ? 'checkmate' : 'stalemate', inCheck: chk, legalMoves: legal };
+          if (hasInsufficientMaterial(pos.board)) return { status: 'draw_material', inCheck: chk, legalMoves: legal };
+          return { status: 'playing', inCheck: chk, legalMoves: legal };
+        }
+
+        function formatSAN(pos, move, captured, inCheck, isMate) {
+          if (move.isCastle === 'K') return isMate ? 'O-O#' : inCheck ? 'O-O+' : 'O-O';
+          if (move.isCastle === 'Q') return isMate ? 'O-O-O#' : inCheck ? 'O-O-O+' : 'O-O-O';
+          var p = pos.board[move.from[0]][move.from[1]];
+          var toSq = sqName(move.to[0], move.to[1]);
+          var cap = captured || move.isEnPassant ? 'x' : '';
+          var suf = isMate ? '#' : inCheck ? '+' : '';
+          if (!p || p.type === 'p') {
+            var pre = cap ? FILES[move.from[1]] + 'x' : '';
+            var promo = move.promotion ? '=' + move.promotion.toUpperCase() : '';
+            return pre + toSq + promo + suf;
+          }
+          return p.type.toUpperCase() + cap + toSq + suf;
+        }
+
+        function evaluatePos(pos, perspective) {
+          var score = 0;
+          for (var r = 0; r < 8; r++) {
+            for (var c = 0; c < 8; c++) {
+              var p = pos.board[r][c];
+              if (!p) continue;
+              var pr = p.color === 'w' ? r : 7 - r;
+              var val = PIECE_VALUES[p.type] + PST[p.type][pr][c];
+              score += p.color === perspective ? val : -val;
+            }
+          }
+          return score;
+        }
+
+        function orderMoves(pos, moves) {
+          return moves.slice().sort(function (a, b) {
+            var ca = pos.board[a.to[0]][a.to[1]];
+            var cb = pos.board[b.to[0]][b.to[1]];
+            var sa = (ca ? PIECE_VALUES[ca.type] : 0) + (a.promotion ? 800 : 0);
+            var sb = (cb ? PIECE_VALUES[cb.type] : 0) + (b.promotion ? 800 : 0);
+            return sb - sa;
+          });
+        }
+
+        function minimax(pos, depth, alpha, beta, maxing, botColor) {
+          var moves = getLegalMoves(pos);
+          if (moves.length === 0) {
+            if (isInCheck(pos.board, pos.turn)) return maxing ? -50000 - depth : 50000 + depth;
+            return 0;
+          }
+          if (depth === 0) return evaluatePos(pos, botColor);
+          var ordered = orderMoves(pos, moves);
+          if (maxing) {
+            var maxEv = -Infinity;
+            for (var i = 0; i < ordered.length; i++) {
+              var ev = minimax(execRawMove(pos, ordered[i]).nextPos, depth - 1, alpha, beta, false, botColor);
+              if (ev > maxEv) maxEv = ev;
+              if (ev > alpha) alpha = ev;
+              if (beta <= alpha) break;
+            }
+            return maxEv;
+          } else {
+            var minEv = Infinity;
+            for (var j = 0; j < ordered.length; j++) {
+              var ev2 = minimax(execRawMove(pos, ordered[j]).nextPos, depth - 1, alpha, beta, true, botColor);
+              if (ev2 < minEv) minEv = ev2;
+              if (ev2 < beta) beta = ev2;
+              if (beta <= alpha) break;
+            }
+            return minEv;
+          }
+        }
+
+        function chooseBotMove(pos, difficulty) {
+          var legal = orderMoves(pos, getLegalMoves(pos));
+          if (legal.length === 0) return null;
+          var botColor = pos.turn;
+          if (difficulty === 'easy') {
+            var scored = legal.map(function (m) {
+              return { move: m, score: evaluatePos(execRawMove(pos, m).nextPos, botColor) + (Math.random() * 140 - 70) };
+            });
+            scored.sort(function (a, b) { return b.score - a.score; });
+            var pool = scored.slice(0, Math.min(3, scored.length));
+            return pool[Math.floor(Math.random() * pool.length)].move;
+          }
+          var depth = difficulty === 'hard' ? 2 : 1;
+          var bestScore = -Infinity;
+          var bestMoves = [];
+          for (var i = 0; i < legal.length; i++) {
+            var s = minimax(execRawMove(pos, legal[i]).nextPos, depth, -Infinity, Infinity, false, botColor);
+            if (s > bestScore) { bestScore = s; bestMoves = [legal[i]]; }
+            else if (s === bestScore) bestMoves.push(legal[i]);
+          }
+          return bestMoves[Math.floor(Math.random() * bestMoves.length)] || legal[0];
+        }
+
+        function pieceSvgHtml(type, color, sizePx) {
+          var fill = color === 'w' ? '#FFFFFF' : '#1E2420';
+          var stroke = color === 'w' ? '#1E2420' : '#0E120F';
+          var det = color === 'w' ? '#1E2420' : '#E3E8E4';
+          var w = sizePx ? sizePx + 'px' : '78%';
+          var inner = '';
+          if (type === 'p') {
+            inner = '<path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
+          } else if (type === 'r') {
+            inner = '<g fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12 36v-4h21v4H12zM11 14V9h4v2h5V9h5v2h5V9h4v5"/><path d="M34 14l-3 3H14l-3-3"/><path d="M31 17v12.5H14V17"/><path d="M31 29.5l1.5 2.5h-20l1.5-2.5"/><path d="M11 14h23" fill="none" stroke="' + det + '" stroke-width="1.2"/></g>';
+          } else if (type === 'n') {
+            inner = '<g fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21"/><path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3"/><circle cx="15" cy="15.5" r="1" fill="' + det + '" stroke="none"/></g>';
+          } else if (type === 'b') {
+            inner = '<g fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.354.49-2.323.47-3-.5 1.354-1.94 3-2 3-2z"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><circle cx="22.5" cy="8" r="2.5"/><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5" fill="none" stroke="' + det + '" stroke-width="1.3"/></g>';
+          } else if (type === 'q') {
+            inner = '<g fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.2"/><circle cx="14" cy="9" r="2.2"/><circle cx="22.5" cy="8" r="2.2"/><circle cx="31" cy="9" r="2.2"/><circle cx="39" cy="12" r="2.2"/><path d="M9 26c8.5-1.5 21-1.5 27 0l2.5-12.5L31 25l-.3-14.1-5.2 13.6-3-14.5-3 14.5-5.2-13.6L14 25 6.5 13.5 9 26z"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0" fill="none" stroke="' + det + '" stroke-width="1.2"/></g>';
+          } else if (type === 'k') {
+            inner = '<g fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke="' + stroke + '" stroke-width="1.8"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" fill="none" stroke="' + det + '" stroke-width="1.2"/></g>';
+          }
+          return '<svg viewBox="0 0 45 45" style="width:' + w + ';height:' + w + ';pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25));" aria-hidden="true">' + inner + '</svg>';
+        }
+
+        function playChessSound(kind, muted) {
+          if (muted) return;
+          var Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          try {
+            var ctx = new Ctx();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            var now = ctx.currentTime;
+            if (kind === 'move') {
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(240, now);
+              osc.frequency.exponentialRampToValueAtTime(140, now + 0.06);
+              gain.gain.setValueAtTime(0.08, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+              osc.start(now); osc.stop(now + 0.08);
+            } else if (kind === 'capture') {
+              osc.type = 'square';
+              osc.frequency.setValueAtTime(190, now);
+              osc.frequency.exponentialRampToValueAtTime(85, now + 0.09);
+              gain.gain.setValueAtTime(0.09, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+              osc.start(now); osc.stop(now + 0.11);
+            } else if (kind === 'check') {
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(520, now);
+              osc.frequency.setValueAtTime(660, now + 0.07);
+              gain.gain.setValueAtTime(0.08, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+              osc.start(now); osc.stop(now + 0.19);
+            } else {
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(440, now);
+              osc.frequency.setValueAtTime(554.37, now + 0.09);
+              osc.frequency.setValueAtTime(659.25, now + 0.18);
+              gain.gain.setValueAtTime(0.09, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+              osc.start(now); osc.stop(now + 0.36);
+            }
+            setTimeout(function () { if (ctx.close) ctx.close().catch(function () {}); }, 500);
+          } catch (e) {}
+        }
+
+        // ============================================================
+        // 5. UI STATE & DOM REFERENCES
+        // ============================================================
+        var activeView = 'scanner';
+        var adminUnlocked = false;
+        var captureMode = detectDesktop() ? 'upload' : 'camera';
+        var currentImage = null; // { dataUrl, filename, presetCategory }
+        var currentResult = null;
+        var scanLimitReached = false;
+        var activeCameraStream = null;
+        var trickyFilter = 'all';
+        var trickySearchQuery = '';
+        var adminLogFilter = 'ALL';
+        var previewPayChannel = 'card';
+
+        var chessState = {
+          phase: 'TITLE_MENU',
+          mode: 'bot',
+          difficulty: 'medium',
+          playerSide: 'w',
+          flipped: false,
+          muted: false,
+          pos: createInitialChessPos(),
+          selected: null,
+          lastMove: null,
+          history: [],
+          capWhite: [],
+          capBlack: [],
+          pendingPromo: null,
+          winnerText: '',
+          endReason: '',
+          botThinking: false,
+          botTimer: null,
+          limitExceeded: false,
+        };
+
+        var el = {
+          viewScanner: document.getElementById('view-scanner'),
+          viewChess: document.getElementById('view-chess'),
+          viewAdmin: document.getElementById('view-admin'),
+          scannerQuota: document.getElementById('scanner-quota-content'),
+          openPlanBtn: document.getElementById('open-plan-btn'),
+          modeUploadBtn: document.getElementById('mode-upload-btn'),
+          modeCameraBtn: document.getElementById('mode-camera-btn'),
+          uploadPanel: document.getElementById('upload-panel'),
+          cameraPanel: document.getElementById('camera-panel'),
+          previewPanel: document.getElementById('preview-panel'),
+          fileInput: document.getElementById('file-input'),
+          dropzone: document.getElementById('dropzone'),
+          cameraVideo: document.getElementById('camera-video'),
+          cameraSelect: document.getElementById('camera-select'),
+          cameraError: document.getElementById('camera-error'),
+          cameraCaptureBtn: document.getElementById('camera-capture-btn'),
+          previewImg: document.getElementById('preview-img'),
+          previewMeta: document.getElementById('preview-meta'),
+          reanalyzeBtn: document.getElementById('reanalyze-btn'),
+          resetPreviewBtn: document.getElementById('reset-preview-btn'),
+          sampleGrid: document.getElementById('sample-grid'),
+          quickItemForm: document.getElementById('quick-item-form'),
+          quickItemInput: document.getElementById('quick-item-input'),
+          resultEmpty: document.getElementById('result-empty'),
+          resultLimit: document.getElementById('result-limit-alert'),
+          resultContent: document.getElementById('result-content'),
+          coreGuideGrid: document.getElementById('core-guide-grid'),
+          trickySearch: document.getElementById('tricky-search'),
+          trickyList: document.getElementById('tricky-list'),
+          historyContainer: document.getElementById('history-container'),
+          clearHistoryBtn: document.getElementById('clear-history-btn'),
+          globalDragOverlay: document.getElementById('global-drag-overlay'),
+          // Plan Modal
+          planModal: document.getElementById('plan-modal'),
+          planGrid: document.getElementById('plan-comparison-grid'),
+          voucherForm: document.getElementById('voucher-redeem-form'),
+          voucherInput: document.getElementById('voucher-code-input'),
+          planErr: document.getElementById('plan-feedback-error'),
+          planSucc: document.getElementById('plan-feedback-success'),
+          previewProviderSelect: document.getElementById('preview-provider-select'),
+          previewCardWrap: document.getElementById('preview-card-wrap'),
+          previewClientId: document.getElementById('preview-client-id'),
+          // Chess
+          chessQuota: document.getElementById('chess-quota-content'),
+          chessOpenPlanBtn: document.getElementById('chess-open-plan-btn'),
+          chessLimitBanner: document.getElementById('chess-limit-banner'),
+          chessBoard: document.getElementById('chess-board'),
+          chessTitleOverlay: document.getElementById('chess-title-overlay'),
+          chessPromoOverlay: document.getElementById('chess-promo-overlay'),
+          chessPromoChoices: document.getElementById('chess-promo-choices'),
+          chessGameoverOverlay: document.getElementById('chess-gameover-overlay'),
+          chessWinnerText: document.getElementById('chess-winner-text'),
+          chessEndReason: document.getElementById('chess-end-reason'),
+          chessTopLabel: document.getElementById('chess-top-label'),
+          chessTopAdv: document.getElementById('chess-top-adv'),
+          chessTopCap: document.getElementById('chess-top-captured'),
+          chessBottomLabel: document.getElementById('chess-bottom-label'),
+          chessBottomAdv: document.getElementById('chess-bottom-adv'),
+          chessBottomCap: document.getElementById('chess-bottom-captured'),
+          chessFlipBtn: document.getElementById('chess-flip-btn'),
+          chessMuteBtn: document.getElementById('chess-mute-btn'),
+          chessStatusHeading: document.getElementById('chess-status-heading'),
+          chessMoveCount: document.getElementById('chess-move-count'),
+          chessBotOptions: document.getElementById('chess-bot-options'),
+          chessStartBtn: document.getElementById('chess-start-btn'),
+          chessResignBtn: document.getElementById('chess-resign-btn'),
+          chessPlyTotal: document.getElementById('chess-ply-total'),
+          chessMoveLog: document.getElementById('chess-move-log'),
+          // Admin
+          adminAuthBox: document.getElementById('admin-auth-box'),
+          adminConsoleBox: document.getElementById('admin-console-box'),
+          adminAuthTitle: document.getElementById('admin-auth-title'),
+          adminAuthDesc: document.getElementById('admin-auth-desc'),
+          adminAuthForm: document.getElementById('admin-auth-form'),
+          adminPasscodeInput: document.getElementById('admin-passcode-input'),
+          adminAuthError: document.getElementById('admin-auth-error'),
+          adminPolicySummary: document.getElementById('admin-policy-summary'),
+          adminVouchersArea: document.getElementById('admin-vouchers-area'),
+          adminClientTbody: document.getElementById('admin-client-tbody'),
+          adminLogTitle: document.getElementById('admin-log-title'),
+          adminLogList: document.getElementById('admin-log-list'),
+        };
+
+        // ============================================================
+        // 6. VIEW ROUTING & HEADER NAVIGATION
+        // ============================================================
+        function switchView(viewName, scrollTargetId) {
+          activeView = viewName;
+          if (viewName !== 'scanner') stopCamera();
+
+          el.viewScanner.classList.toggle('hidden', viewName !== 'scanner');
+          el.viewChess.classList.toggle('hidden', viewName !== 'chess');
+          el.viewAdmin.classList.toggle('hidden', viewName !== 'admin');
+
+          document.querySelectorAll('[data-nav]').forEach(function (link) {
+            var target = link.getAttribute('data-nav');
+            var isAct =
+              (viewName === 'scanner' && (target === 'scanner' || (scrollTargetId && target === scrollTargetId))) ||
+              (viewName === 'chess' && target === 'chess') ||
+              (viewName === 'admin' && target === 'admin');
+            link.classList.toggle('active', isAct && (!scrollTargetId || target === scrollTargetId));
+          });
+
+          document.querySelectorAll('[data-mobile-view]').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-mobile-view') === viewName);
+          });
+
+          if (viewName === 'admin') renderAdminView();
+          if (viewName === 'chess') renderChess();
+
+          if (scrollTargetId && viewName === 'scanner') {
+            setTimeout(function () {
+              var node = document.getElementById(scrollTargetId);
+              if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 25);
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
+
+        document.querySelectorAll('[data-nav]').forEach(function (a) {
+          a.addEventListener('click', function (e) {
+            e.preventDefault();
+            var nav = a.getAttribute('data-nav');
+            if (nav === 'chess') switchView('chess');
+            else if (nav === 'admin') switchView('admin');
+            else if (nav === 'guide' || nav === 'history') switchView('scanner', nav);
+            else switchView('scanner', 'scanner');
+          });
+        });
+
+        document.querySelectorAll('[data-mobile-view]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            switchView(btn.getAttribute('data-mobile-view'));
+          });
+        });
+
+        document.querySelectorAll('[data-footer-nav]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            switchView(btn.getAttribute('data-footer-nav'));
+          });
+        });
+
+        document.getElementById('brand-home-link').addEventListener('click', function (e) {
+          e.preventDefault();
+          switchView('scanner', 'top');
+        });
+
+        document.getElementById('header-new-scan-btn').addEventListener('click', function () {
+          resetPreview();
+          switchView('scanner', 'scanner');
+        });
+
+        // ============================================================
+        // 7. QUOTA BAR & PLAN MODAL RENDERING
+        // ============================================================
+        function renderQuotaBars() {
+          syncStorePeriod();
+          var isUnlim = appStore.plan === 'unlimited';
+          var rem = Math.max(0, FREE_LIMIT - appStore.usedCount);
+          var pct = Math.min(100, Math.round((appStore.usedCount / FREE_LIMIT) * 100));
+          var fillCls = rem === 0 ? 'danger' : rem <= 3 ? 'warn' : '';
+
+          if (isUnlim) {
+            el.scannerQuota.innerHTML =
+              '<p style="margin:0;font-size:12px;font-weight:700;color:var(--brand);">월 무제한 플랜 (이용권 적용됨)</p>' +
+              '<p class="mono" style="margin:2px 0 0 0;font-size:12px;color:var(--muted);">이번 달 ' +
+              appStore.usedCount +
+              '회 이용 · ' +
+              (getDaysRemaining() || 0) +
+              '일 남음</p>';
+            el.openPlanBtn.textContent = '구독 관리';
+            el.openPlanBtn.className = 'btn btn-outline';
+          } else {
+            el.scannerQuota.innerHTML =
+              '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;">' +
+              '<span style="font-weight:600;">이번 달 무료 (' +
+              escapeHtml(appStore.usageMonth) +
+              ')</span>' +
+              '<span class="mono" style="color:var(--muted);">잔여 ' +
+              rem +
+              ' / ' +
+              FREE_LIMIT +
+              '회</span></div>' +
+              '<div class="progress-track"><div class="progress-fill ' +
+              fillCls +
+              '" style="width:' +
+              pct +
+              '%;"></div></div>';
+            el.openPlanBtn.textContent = '월 9,900원 무제한';
+            el.openPlanBtn.className = 'btn btn-dark';
+          }
+
+          var chessRem = Math.max(0, CHESS_FREE_LIMIT - appStore.chessUsedCount);
+          if (isUnlim) {
+            el.chessQuota.innerHTML =
+              '<p style="margin:0;font-size:12px;font-weight:700;color:var(--brand);">무제한 플랜 혜택 적용 (체스 무료)</p>' +
+              '<p class="mono" style="margin:2px 0 0 0;font-size:12px;color:var(--muted);">이번 달 ' +
+              appStore.chessUsedCount +
+              '판 플레이 · 횟수 제한 없음</p>';
+            el.chessOpenPlanBtn.classList.add('hidden');
+          } else {
+            el.chessQuota.innerHTML =
+              '<p style="margin:0;font-size:12px;font-weight:700;">이번 달 무료 체스</p>' +
+              '<p class="mono" style="margin:2px 0 0 0;font-size:12px;color:var(--muted);">잔여 ' +
+              chessRem +
+              ' / ' +
+              CHESS_FREE_LIMIT +
+              '판</p>';
+            el.chessOpenPlanBtn.classList.remove('hidden');
+          }
+        }
+
+        function renderPlanModal() {
+          syncStorePeriod();
+          var isUnlim = appStore.plan === 'unlimited';
+          var rem = Math.max(0, FREE_LIMIT - appStore.usedCount);
+          var cRem = Math.max(0, CHESS_FREE_LIMIT - appStore.chessUsedCount);
+
+          el.planGrid.innerHTML =
+            '<div style="border-radius:12px;border:1px solid ' +
+            (!isUnlim ? 'var(--ink)' : 'var(--border)') +
+            ';background:' +
+            (!isUnlim ? 'var(--surface-soft)' : '#fff') +
+            ';padding:18px;display:flex;flex-direction:column;justify-content:space-between;">' +
+            '<div><div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<h3 style="margin:0;font-size:15px;font-weight:700;">월간 무료 플랜</h3>' +
+            (!isUnlim ? '<span style="font-size:12px;font-weight:600;color:var(--brand);">현재 이용 중</span>' : '') +
+            '</div>' +
+            '<p class="mono" style="margin:8px 0 0 0;font-size:22px;font-weight:700;">0원 <span style="font-family:var(--font-sans);font-size:12px;font-weight:400;color:var(--muted);">/ 매월 20회</span></p>' +
+            '<ul style="margin:14px 0 0 0;padding-left:16px;font-size:12px;color:var(--ink-sub);display:flex;flex-direction:column;gap:6px;">' +
+            '<li>쓰레기 판별 월 20회 + 체스 게임 월 20판 무료</li>' +
+            '<li>일반쓰레기 · 캔·병류 · 종이류 구분 및 AI 체스</li>' +
+            '<li>매월 1일마다 판별·체스 무료 횟수 자동 초기화</li></ul></div>' +
+            (!isUnlim
+              ? '<p class="mono" style="margin:14px 0 0 0;padding-top:10px;border-top:1px solid #eceee9;font-size:11px;color:var(--muted);">' +
+                escapeHtml(appStore.usageMonth) +
+                ' 잔여: 판별 ' +
+                rem +
+                '/20회 · 체스 ' +
+                cRem +
+                '/20판</p>'
+              : '') +
+            '</div>' +
+            '<div style="border-radius:12px;border:1px solid ' +
+            (isUnlim ? 'var(--brand)' : 'rgba(19,111,74,0.45)') +
+            ';background:' +
+            (isUnlim ? 'var(--brand-soft)' : '#f9fcfa') +
+            ';padding:18px;display:flex;flex-direction:column;justify-content:space-between;">' +
+            '<div><div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<h3 style="margin:0;font-size:15px;font-weight:700;">월 무제한 플랜</h3>' +
+            (isUnlim ? '<span style="font-size:12px;font-weight:600;color:var(--brand);">이용 중</span>' : '') +
+            '</div>' +
+            '<p class="mono" style="margin:8px 0 0 0;font-size:22px;font-weight:700;color:var(--brand);">월 9,900원 <span style="font-family:var(--font-sans);font-size:12px;font-weight:400;color:var(--muted);">/ 1개월 단위</span></p>' +
+            '<ul style="margin:14px 0 0 0;padding-left:16px;font-size:12px;color:var(--ink-sub);display:flex;flex-direction:column;gap:6px;">' +
+            '<li>1개월 동안 쓰레기 판별·체스 게임 모두 무제한 무료</li>' +
+            '<li>관리자 발급 이용권 코드 적용 즉시 활성화</li>' +
+            '<li>추가 코드 적용 시 만료일 +1개월 연장</li></ul></div>' +
+            (isUnlim && appStore.unlimitedExpiresAt
+              ? '<p class="mono" style="margin:14px 0 0 0;padding-top:10px;border-top:1px solid rgba(19,111,74,0.18);font-size:11px;font-weight:600;color:var(--brand);">만료일 ' +
+                formatDate(appStore.unlimitedExpiresAt) +
+                ' (' +
+                (getDaysRemaining() || 0) +
+                '일 남음)</p>'
+              : '') +
+            '</div>';
+
+          el.previewClientId.value = appStore.clientId;
+          renderPreviewProviderOptions();
+        }
+
+        function renderPreviewProviderOptions() {
+          var opts =
+            previewPayChannel === 'card'
+              ? ['신한카드', '삼성카드', '현대카드', '국민카드', '카카오뱅크 카드']
+              : ['카카오페이', '토스페이', '네이버페이', '페이코'];
+          el.previewProviderSelect.innerHTML = opts
+            .map(function (o) {
+              return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>';
+            })
+            .join('');
+          el.previewCardWrap.classList.toggle('hidden', previewPayChannel !== 'card');
+        }
+
+        function openPlanModal() {
+          el.planErr.classList.add('hidden');
+          el.planSucc.classList.add('hidden');
+          renderPlanModal();
+          el.planModal.classList.remove('hidden');
+        }
+
+        function closePlanModal() {
+          el.planModal.classList.add('hidden');
+        }
+
+        el.openPlanBtn.addEventListener('click', openPlanModal);
+        el.chessOpenPlanBtn.addEventListener('click', openPlanModal);
+        document.getElementById('chess-banner-plan-btn').addEventListener('click', openPlanModal);
+        document.getElementById('limit-open-plan-btn').addEventListener('click', openPlanModal);
+        document.getElementById('footer-plan-btn').addEventListener('click', openPlanModal);
+        document.getElementById('close-plan-btn').addEventListener('click', closePlanModal);
+
+        document.querySelectorAll('[data-pay-preview]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            previewPayChannel = btn.getAttribute('data-pay-preview');
+            document.querySelectorAll('[data-pay-preview]').forEach(function (b) {
+              b.classList.toggle('active', b === btn);
+            });
+            renderPreviewProviderOptions();
+          });
+        });
+
+        el.voucherForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          el.planErr.classList.add('hidden');
+          el.planSucc.classList.add('hidden');
+          var code = el.voucherInput.value.trim().toUpperCase();
+          if (!code) {
+            el.planErr.textContent = '관리자가 발급한 이용권 코드를 입력해 주세요.';
+            el.planErr.classList.remove('hidden');
+            return;
+          }
+
+          var found = null;
+          for (var i = 0; i < appStore.vouchers.length; i++) {
+            if (appStore.vouchers[i].code === code) {
+              found = appStore.vouchers[i];
+              break;
+            }
+          }
+
+          if (!found) {
+            el.planErr.textContent = '유효하지 않은 이용권 코드입니다. 관리자 콘솔에서 먼저 발급해 주세요.';
+            el.planErr.classList.remove('hidden');
+            addLog('WARN', '유효하지 않은 이용권 코드 입력 시도: ' + code);
+            return;
+          }
+          if (found.redeemedBy) {
+            el.planErr.textContent = '이미 사용 완료된 이용권 코드입니다.';
+            el.planErr.classList.remove('hidden');
+            return;
+          }
+
+          var now = Date.now();
+          var baseTime =
+            appStore.plan === 'unlimited' && appStore.unlimitedExpiresAt && appStore.unlimitedExpiresAt > now
+              ? appStore.unlimitedExpiresAt
+              : now;
+
+          found.redeemedBy = appStore.clientId;
+          found.redeemedAt = now;
+          appStore.plan = 'unlimited';
+          appStore.unlimitedExpiresAt = addOneMonth(baseTime);
+          appStore.upgradeMethod = 'voucher';
+          addLog('INFO', '이용권 코드 적용으로 1개월 무제한 플랜 활성화 (' + code + ')');
+          writeStorage(STORE_KEY, appStore);
+
+          el.voucherInput.value = '';
+          scanLimitReached = false;
+          chessState.limitExceeded = false;
+          el.planSucc.textContent = '이용권 코드가 적용되어 1개월 동안 판별·체스 무제한 플랜이 활성화되었습니다.';
+          el.planSucc.classList.remove('hidden');
+          renderQuotaBars();
+          renderPlanModal();
+          renderChess();
+          renderResultPanel();
+        });
+
+        // ============================================================
+        // 8. SCANNER: UPLOAD, CAMERA, DRAG-DROP, PASTE & ANALYSIS
+        // ============================================================
+        function setCaptureMode(mode) {
+          captureMode = mode;
+          el.modeUploadBtn.classList.toggle('active', mode === 'upload');
+          el.modeCameraBtn.classList.toggle('active', mode === 'camera');
+          if (!currentImage) {
+            el.uploadPanel.classList.toggle('hidden', mode !== 'upload');
+            el.cameraPanel.classList.toggle('hidden', mode !== 'camera');
+            if (mode === 'camera') startCamera();
+            else stopCamera();
+          }
+        }
+
+        function stopCamera() {
+          if (activeCameraStream) {
+            activeCameraStream.getTracks().forEach(function (t) { t.stop(); });
+            activeCameraStream = null;
+          }
+          el.cameraVideo.srcObject = null;
+        }
+
+        function startCamera(deviceId) {
+          stopCamera();
+          el.cameraError.classList.add('hidden');
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            el.cameraError.textContent =
+              '현재 실행 방식(file:// 또는 미지원 브라우저)에서는 카메라 접근이 제한될 수 있습니다. 사진 업로드, 드래그, Ctrl+V 붙여넣기를 이용해 주세요.';
+            el.cameraError.classList.remove('hidden');
+            return;
+          }
+
+          var constraints = {
+            video: deviceId
+              ? { deviceId: { exact: deviceId } }
+              : { facingMode: detectDesktop() ? 'user' : 'environment' },
+            audio: false,
+          };
+
+          navigator.mediaDevices
+            .getUserMedia(constraints)
+            .then(function (stream) {
+              activeCameraStream = stream;
+              el.cameraVideo.srcObject = stream;
+              return navigator.mediaDevices.enumerateDevices ? navigator.mediaDevices.enumerateDevices() : [];
+            })
+            .then(function (devices) {
+              var cams = devices.filter(function (d) { return d.kind === 'videoinput'; });
+              el.cameraSelect.innerHTML = cams
+                .map(function (c, idx) {
+                  return (
+                    '<option value="' +
+                    escapeHtml(c.deviceId) +
+                    '"' +
+                    (deviceId && c.deviceId === deviceId ? ' selected' : '') +
+                    '>' +
+                    escapeHtml(c.label || '카메라 ' + (idx + 1)) +
+                    '</option>'
+                  );
+                })
+                .join('');
+            })
+            .catch(function () {
+              el.cameraError.textContent =
+                '카메라 권한이 거부되었거나 연결된 웹캠이 없습니다. 사진 업로드 또는 Ctrl+V 붙여넣기를 사용해 주세요.';
+              el.cameraError.classList.remove('hidden');
+            });
+        }
+
+        el.modeUploadBtn.addEventListener('click', function () { setCaptureMode('upload'); });
+        el.modeCameraBtn.addEventListener('click', function () { setCaptureMode('camera'); });
+        el.cameraSelect.addEventListener('change', function () { startCamera(el.cameraSelect.value); });
+
+        el.cameraCaptureBtn.addEventListener('click', function () {
+          if (!el.cameraVideo.videoWidth) return;
+          var c = document.createElement('canvas');
+          c.width = el.cameraVideo.videoWidth;
+          c.height = el.cameraVideo.videoHeight;
+          c.getContext('2d').drawImage(el.cameraVideo, 0, 0);
+          var url = c.toDataURL('image/jpeg', 0.85);
+          processImageInput(url, 'webcam-capture.jpg', null);
+        });
+
+        function resetPreview() {
+          currentImage = null;
+          currentResult = null;
+          scanLimitReached = false;
+          el.previewPanel.classList.add('hidden');
+          setCaptureMode(captureMode);
+          renderResultPanel();
+        }
+
+        el.resetPreviewBtn.addEventListener('click', resetPreview);
+        el.reanalyzeBtn.addEventListener('click', function () {
+          if (currentImage) processImageInput(currentImage.dataUrl, currentImage.filename, currentImage.presetCategory);
+        });
+
+        function handleFileObject(file) {
+          if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
+          var reader = new FileReader();
+          reader.onload = function () {
+            processImageInput(reader.result, file.name || 'uploaded-image.jpg', null);
+          };
+          reader.readAsDataURL(file);
+        }
+
+        el.dropzone.addEventListener('click', function () { el.fileInput.click(); });
+        el.dropzone.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            el.fileInput.click();
+          }
+        });
+        el.fileInput.addEventListener('change', function () {
+          if (el.fileInput.files && el.fileInput.files[0]) {
+            handleFileObject(el.fileInput.files[0]);
+            el.fileInput.value = '';
+          }
+        });
+
+        // Window Drag & Drop
+        var dragCounter = 0;
+        window.addEventListener('dragenter', function (e) {
+          if (activeView !== 'scanner' || !el.planModal.classList.contains('hidden')) return;
+          if (!e.dataTransfer || Array.from(e.dataTransfer.types || []).indexOf('Files') === -1) return;
+          e.preventDefault();
+          dragCounter++;
+          el.globalDragOverlay.classList.remove('hidden');
+        });
+        window.addEventListener('dragover', function (e) {
+          if (activeView !== 'scanner' || !el.planModal.classList.contains('hidden')) return;
+          e.preventDefault();
+        });
+        window.addEventListener('dragleave', function () {
+          dragCounter = Math.max(0, dragCounter - 1);
+          if (dragCounter === 0) el.globalDragOverlay.classList.add('hidden');
+        });
+        window.addEventListener('drop', function (e) {
+          if (activeView !== 'scanner' || !el.planModal.classList.contains('hidden')) return;
+          dragCounter = 0;
+          el.globalDragOverlay.classList.add('hidden');
+          var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f && f.type && f.type.indexOf('image/') === 0) {
+            e.preventDefault();
+            handleFileObject(f);
+          }
+        });
+
+        // Global Ctrl+V Paste
+        window.addEventListener('paste', function (e) {
+          if (activeView !== 'scanner' || !el.planModal.classList.contains('hidden')) return;
+          var tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+          if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+          var items = e.clipboardData && e.clipboardData.items;
+          if (!items) return;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file' && items[i].type.indexOf('image/') === 0) {
+              e.preventDefault();
+              handleFileObject(items[i].getAsFile());
+              return;
+            }
+          }
+        });
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') {
+            if (!el.planModal.classList.contains('hidden')) closePlanModal();
+            else if (activeView === 'scanner' && currentImage) resetPreview();
+            return;
+          }
+          if (activeView !== 'scanner' || !el.planModal.classList.contains('hidden')) return;
+          var tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+          if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
+            e.preventDefault();
+            el.fileInput.click();
+          } else if (e.key.toLowerCase() === 'r' && currentImage) {
+            e.preventDefault();
+            processImageInput(currentImage.dataUrl, currentImage.filename, currentImage.presetCategory);
+          } else if (e.key === ' ' && captureMode === 'camera' && !currentImage) {
+            e.preventDefault();
+            el.cameraCaptureBtn.click();
+          }
+        });
+
+        function consumeScanQuota() {
+          syncStorePeriod();
+          if (appStore.plan !== 'unlimited' && appStore.usedCount >= FREE_LIMIT) {
+            scanLimitReached = true;
+            addLog('WARN', '월간 무료 판별 한도(20회) 도달');
+            renderQuotaBars();
+            renderResultPanel();
+            openPlanModal();
+            return false;
+          }
+          appStore.usedCount += 1;
+          appStore.lastUsedAt = Date.now();
+          writeStorage(STORE_KEY, appStore);
+          renderQuotaBars();
+          return true;
+        }
+
+        function processImageInput(dataUrl, filename, presetCategory) {
+          if (!consumeScanQuota()) return;
+          stopCamera();
+          currentImage = { dataUrl: dataUrl, filename: filename || '', presetCategory: presetCategory || null };
+          el.uploadPanel.classList.add('hidden');
+          el.cameraPanel.classList.add('hidden');
+          el.previewPanel.classList.remove('hidden');
+          el.previewImg.src = dataUrl;
+          el.previewMeta.textContent = filename || '이미지 로드됨';
+
+          var img = new Image();
+          img.onload = function () {
+            var res = analyzeImagePixelsAndFilename(img, filename, presetCategory);
+            currentResult = res;
+            scanLimitReached = false;
+            saveScanHistory(dataUrl, res);
+            addLog('INFO', '이미지 판별 완료: [' + res.categoryLabel + '] ' + res.itemName);
+            renderResultPanel();
+          };
+          img.src = dataUrl;
+        }
+
+        el.quickItemForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var q = el.quickItemInput.value.trim();
+          if (!q) return;
+          if (!consumeScanQuota()) return;
+          var res = classifyByKeywordText(q);
+          currentResult = res;
+          scanLimitReached = false;
+          saveScanHistory('', res);
+          addLog('INFO', '품목 검색 판별 완료: [' + res.categoryLabel + '] ' + res.itemName);
+          renderResultPanel();
+        });
+
+        function saveScanHistory(thumbDataUrl, res) {
+          var entry = {
+            id: 'scan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            timestamp: Date.now(),
+            imageDataUrl: thumbDataUrl || '',
+            result: res,
+          };
+          scanHistory.unshift(entry);
+          if (scanHistory.length > 18) scanHistory.length = 18;
+          writeStorage(HISTORY_KEY, scanHistory);
+          renderHistory();
+        }
+
+        function renderResultPanel() {
+          if (scanLimitReached) {
+            el.resultEmpty.classList.add('hidden');
+            el.resultContent.classList.add('hidden');
+            el.resultLimit.classList.remove('hidden');
+            return;
+          }
+          if (!currentResult) {
+            el.resultEmpty.classList.remove('hidden');
+            el.resultLimit.classList.add('hidden');
+            el.resultContent.classList.add('hidden');
+            return;
+          }
+
+          el.resultEmpty.classList.add('hidden');
+          el.resultLimit.classList.add('hidden');
+          el.resultContent.classList.remove('hidden');
+
+          var r = currentResult;
+          var catCls = 'cat-' + r.primaryCategory;
+          var stepsHtml = (r.disposalSteps || [])
+            .map(function (st, idx) {
+              return (
+                '<li class="step-item"><span class="step-num">' +
+                (idx + 1) +
+                '</span><span>' +
+                escapeHtml(st) +
+                '</span></li>'
+              );
+            })
+            .join('');
+
+          el.resultContent.innerHTML =
+            '<div style="border:1px solid;border-radius:12px;padding:16px;" class="' +
+            catCls +
+            '">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+            '<div>' +
+            '<p style="margin:0;font-size:12px;font-weight:700;">' +
+            escapeHtml(r.categoryLabel) +
+            ' · ' +
+            escapeHtml(CATEGORY_META[r.primaryCategory].binName) +
+            '</p>' +
+            '<h3 style="margin:4px 0 0 0;font-size:20px;font-weight:700;color:var(--ink);">' +
+            escapeHtml(r.itemName) +
+            '</h3>' +
+            '</div>' +
+            '<span class="mono" style="font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.75);">신뢰도 ' +
+            r.confidence +
+            '%</span>' +
+            '</div>' +
+            '<p style="margin:10px 0 0 0;font-size:13px;font-weight:600;color:var(--ink);">' +
+            escapeHtml(r.summary) +
+            '</p>' +
+            '</div>' +
+            '<div>' +
+            '<p style="margin:0 0 4px 0;font-size:12px;font-weight:700;">판별 근거 (' +
+            escapeHtml(r.sourceNote || '로컬 분석') +
+            ')</p>' +
+            '<p style="margin:0;font-size:13px;color:var(--muted);">' +
+            escapeHtml(r.reason) +
+            '</p>' +
+            '</div>' +
+            '<div>' +
+            '<p style="margin:0;font-size:12px;font-weight:700;">분리배출 순서</p>' +
+            '<ol class="step-list">' +
+            stepsHtml +
+            '</ol>' +
+            '</div>' +
+            '<div style="background:var(--surface-muted);border-radius:10px;padding:12px;font-size:12px;color:var(--ink-sub);">' +
+            '<strong>주의사항:</strong> ' +
+            escapeHtml(r.caution) +
+            '</div>' +
+            '<div style="padding-top:10px;border-top:1px solid #eceee9;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">' +
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' +
+            '<span style="font-size:11px;color:var(--muted);">재질 교정:</span>' +
+            '<button type="button" class="btn btn-outline" style="min-height:30px;padding:4px 8px;font-size:11px;" data-reclassify="general">일반쓰레기</button>' +
+            '<button type="button" class="btn btn-outline" style="min-height:30px;padding:4px 8px;font-size:11px;" data-reclassify="can_bottle">캔·병류</button>' +
+            '<button type="button" class="btn btn-outline" style="min-height:30px;padding:4px 8px;font-size:11px;" data-reclassify="paper">종이류</button>' +
+            '<button type="button" class="btn btn-outline" style="min-height:30px;padding:4px 8px;font-size:11px;" data-reclassify="other_recyclable">플라스틱·비닐</button>' +
+            '</div>' +
+            '<button type="button" id="copy-result-btn" class="btn btn-outline">결과 복사</button>' +
+            '</div>';
+
+          el.resultContent.querySelectorAll('[data-reclassify]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var cat = btn.getAttribute('data-reclassify');
+              var meta = CATEGORY_META[cat];
+              currentResult = {
+                primaryCategory: cat,
+                categoryLabel: meta.label,
+                itemName: meta.label + ' (직접 선택)',
+                confidence: 100,
+                summary: meta.coreRule,
+                reason: '사용자가 품목 재질을 [' + meta.label + '] 기준으로 직접 지정했습니다.',
+                disposalSteps: [meta.coreRule, '대표 품목: ' + meta.examples.join(', ')],
+                caution: meta.commonMistake,
+                sourceNote: '사용자 재질 교정',
+              };
+              renderResultPanel();
+            });
+          });
+
+          var copyBtn = document.getElementById('copy-result-btn');
+          copyBtn.addEventListener('click', function () {
+            var txt =
+              '[그린렌즈 판별 결과]\n' +
+              '품목: ' +
+              currentResult.itemName +
+              '\n분류: ' +
+              currentResult.categoryLabel +
+              '\n요약: ' +
+              currentResult.summary +
+              '\n주의: ' +
+              currentResult.caution;
+            copyText(txt, function (ok) {
+              copyBtn.textContent = ok ? '복사 완료!' : '복사 실패';
+              setTimeout(function () { copyBtn.textContent = '결과 복사'; }, 1800);
+            });
+          });
+        }
+
+        function renderSamples() {
+          var samples = [
+            { id: 'can', title: '알루미늄 캔과 유리병', sub: '캔 · 병류 예시', cat: 'can_bottle' },
+            { id: 'paper', title: '택배 상자와 신문지', sub: '재활용 종이류 예시', cat: 'paper' },
+            { id: 'general', title: '기름 묻은 박스·휴지', sub: '일반쓰레기 예시', cat: 'general' },
+          ];
+          el.sampleGrid.innerHTML = '';
+          samples.forEach(function (s) {
+            var url = createSampleDataUrl(s.cat);
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sample-card';
+            btn.innerHTML =
+              '<img class="sample-thumb" src="' +
+              url +
+              '" alt="' +
+              escapeHtml(s.title) +
+              '" />' +
+              '<div style="min-width:0;">' +
+              '<p style="margin:0;font-size:12px;font-weight:700;color:var(--ink);">' +
+              escapeHtml(s.title) +
+              '</p>' +
+              '<p style="margin:2px 0 0 0;font-size:11px;color:var(--muted);">' +
+              escapeHtml(s.sub) +
+              '</p></div>';
+            btn.addEventListener('click', function () {
+              processImageInput(url, s.title + '.png', s.cat);
+            });
+            el.sampleGrid.appendChild(btn);
+          });
+        }
+
+        function renderGuidesAndTricky() {
+          var cats = ['general', 'can_bottle', 'paper'];
+          el.coreGuideGrid.innerHTML = cats
+            .map(function (id) {
+              var m = CATEGORY_META[id];
+              return (
+                '<article class="card" style="display:flex;flex-direction:column;justify-content:space-between;">' +
+                '<div><div style="display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid #eceee9;">' +
+                '<div class="cat-' +
+                id +
+                '" style="width:38px;height:38px;border-radius:10px;border:1px solid;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">' +
+                escapeHtml(m.label.slice(0, 2)) +
+                '</div>' +
+                '<div><h3 style="margin:0;font-size:16px;font-weight:700;">' +
+                escapeHtml(m.label) +
+                '</h3><p style="margin:2px 0 0 0;font-size:12px;color:var(--muted);">' +
+                escapeHtml(m.binName) +
+                '</p></div></div>' +
+                '<p style="margin:14px 0 0 0;font-size:13px;color:var(--ink-sub);">' +
+                escapeHtml(m.coreRule) +
+                '</p>' +
+                '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #eceee9;">' +
+                '<p style="margin:0 0 4px 0;font-size:12px;font-weight:700;">대표 품목</p>' +
+                '<p style="margin:0;font-size:12px;color:var(--muted);">' +
+                escapeHtml(m.examples.join(' · ')) +
+                '</p></div></div>' +
+                '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #eceee9;font-size:12px;color:var(--muted);">' +
+                '<strong style="color:var(--ink);">자주 하는 실수:</strong> ' +
+                escapeHtml(m.commonMistake) +
+                '</div></article>'
+              );
+            })
+            .join('');
+
+          renderTrickyList();
+        }
+
+        function renderTrickyList() {
+          var q = trickySearchQuery.trim().toLowerCase();
+          var items = TRICKY_ITEMS.filter(function (it) {
+            if (trickyFilter !== 'all' && it.category !== trickyFilter) return false;
+            if (!q) return true;
+            return (
+              it.name.toLowerCase().indexOf(q) !== -1 ||
+              it.reason.toLowerCase().indexOf(q) !== -1 ||
+              it.tip.toLowerCase().indexOf(q) !== -1
+            );
+          });
+
+          if (items.length === 0) {
+            el.trickyList.innerHTML =
+              '<p style="padding:32px 0;text-align:center;font-size:13px;color:var(--muted);">검색 조건에 맞는 품목이 없습니다.</p>';
+            return;
+          }
+
+          el.trickyList.innerHTML = items
+            .map(function (it) {
+              var m = CATEGORY_META[it.category];
+              return (
+                '<div class="tricky-row">' +
+                '<div><h3 style="margin:0;font-size:14px;font-weight:600;">' +
+                escapeHtml(it.name) +
+                '</h3><p style="margin:4px 0 0 0;font-size:12px;font-weight:700;color:var(--brand);">' +
+                escapeHtml(m.label) +
+                '</p></div>' +
+                '<p style="margin:0;font-size:12px;color:var(--muted);">' +
+                escapeHtml(it.reason) +
+                '</p>' +
+                '<p style="margin:0;font-size:12px;font-weight:500;">' +
+                escapeHtml(it.tip) +
+                '</p></div>'
+              );
+            })
+            .join('');
+        }
+
+        el.trickySearch.addEventListener('input', function () {
+          trickySearchQuery = el.trickySearch.value;
+          renderTrickyList();
+        });
+
+        document.querySelectorAll('[data-tricky-filter]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            trickyFilter = btn.getAttribute('data-tricky-filter');
+            document.querySelectorAll('[data-tricky-filter]').forEach(function (b) {
+              b.classList.toggle('active', b === btn);
+            });
+            renderTrickyList();
+          });
+        });
+
+        function renderHistory() {
+          if (scanHistory.length === 0) {
+            el.historyContainer.innerHTML =
+              '<p style="padding:28px 0;text-align:center;font-size:13px;color:var(--muted);">아직 판별한 기록이 없습니다.</p>';
+            return;
+          }
+
+          el.historyContainer.innerHTML = '';
+          var grid = document.createElement('div');
+          grid.className = 'history-grid';
+
+          scanHistory.forEach(function (entry) {
+            var card = document.createElement('div');
+            card.className = 'history-item';
+            var thumbHtml = entry.imageDataUrl
+              ? '<img class="history-thumb" src="' + entry.imageDataUrl + '" alt="' + escapeHtml(entry.result.itemName) + '" />'
+              : '<div class="history-thumb" style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--muted);">품목 검색 판별</div>';
+
+            card.innerHTML =
+              thumbHtml +
+              '<div style="padding:12px;display:flex;flex-direction:column;gap:4px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">' +
+              '<span style="font-size:11px;font-weight:700;color:var(--brand);">' +
+              escapeHtml(entry.result.categoryLabel) +
+              '</span>' +
+              '<span class="mono" style="font-size:11px;color:var(--muted);">' +
+              formatTime(entry.timestamp) +
+              '</span></div>' +
+              '<p style="margin:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+              escapeHtml(entry.result.itemName) +
+              '</p>' +
+              '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+              '<button type="button" class="link-btn" data-hist-open>다시 보기</button>' +
+              '<button type="button" class="link-btn" data-hist-del style="color:var(--danger);">삭제</button>' +
+              '</div></div>';
+
+            var openFn = function () {
+              currentResult = entry.result;
+              scanLimitReached = false;
+              if (entry.imageDataUrl) {
+                currentImage = { dataUrl: entry.imageDataUrl, filename: entry.result.itemName, presetCategory: null };
+                el.uploadPanel.classList.add('hidden');
+                el.cameraPanel.classList.add('hidden');
+                el.previewPanel.classList.remove('hidden');
+                el.previewImg.src = entry.imageDataUrl;
+                el.previewMeta.textContent = '기록 불러옴';
+              } else {
+                currentImage = null;
+                el.previewPanel.classList.add('hidden');
+                setCaptureMode(captureMode);
+              }
+              renderResultPanel();
+              switchView('scanner', 'scanner');
+            };
+
+            card.querySelector('.history-thumb').addEventListener('click', openFn);
+            card.querySelector('[data-hist-open]').addEventListener('click', openFn);
+            card.querySelector('[data-hist-del]').addEventListener('click', function () {
+              scanHistory = scanHistory.filter(function (x) { return x.id !== entry.id; });
+              writeStorage(HISTORY_KEY, scanHistory);
+              renderHistory();
+            });
+            grid.appendChild(card);
+          });
+
+          el.historyContainer.appendChild(grid);
+        }
+
+        el.clearHistoryBtn.addEventListener('click', function () {
+          scanHistory = [];
+          writeStorage(HISTORY_KEY, scanHistory);
+          renderHistory();
+        });
+
+        // ============================================================
+        // 9. CHESS UI & GAME CONTROLLER
+        // ============================================================
+        function clearBotTimer() {
+          if (chessState.botTimer) {
+            clearTimeout(chessState.botTimer);
+            chessState.botTimer = null;
+          }
+        }
+
+        function startNewChessGame() {
+          syncStorePeriod();
+          clearBotTimer();
+          if (appStore.plan !== 'unlimited' && appStore.chessUsedCount >= CHESS_FREE_LIMIT) {
+            chessState.limitExceeded = true;
+            addLog('WARN', '체스 무료 한도(20판) 초과로 시작 차단');
+            renderQuotaBars();
+            renderChess();
+            openPlanModal();
+            return;
+          }
+
+          appStore.chessUsedCount += 1;
+          appStore.lastUsedAt = Date.now();
+          writeStorage(STORE_KEY, appStore);
+          addLog('INFO', '체스 대국 시작 (' + (appStore.plan === 'unlimited' ? '무제한 무료' : appStore.chessUsedCount + '/20판') + ')');
+
+          chessState.limitExceeded = false;
+          chessState.phase = 'PLAYING';
+          chessState.pos = createInitialChessPos();
+          chessState.selected = null;
+          chessState.lastMove = null;
+          chessState.history = [];
+          chessState.capWhite = [];
+          chessState.capBlack = [];
+          chessState.pendingPromo = null;
+          chessState.winnerText = '';
+          chessState.endReason = '';
+          chessState.botThinking = false;
+          chessState.flipped = chessState.mode === 'bot' && chessState.playerSide === 'b';
+
+          renderQuotaBars();
+          renderChess();
+          maybeTriggerBot();
+        }
+
+        function commitChessMove(move) {
+          var movingColor = chessState.pos.turn;
+          var raw = execRawMove(chessState.pos, move);
+          var nextState = getChessGameStatus(raw.nextPos);
+          var san = formatSAN(chessState.pos, move, raw.captured, nextState.inCheck, nextState.status === 'checkmate');
+
+          chessState.pos = raw.nextPos;
+          chessState.lastMove = { from: move.from, to: move.to };
+          chessState.selected = null;
+          chessState.pendingPromo = null;
+
+          if (raw.captured) {
+            if (movingColor === 'w') chessState.capWhite.push(raw.captured);
+            else chessState.capBlack.push(raw.captured);
+          }
+
+          chessState.history.push({ ply: chessState.history.length + 1, color: movingColor, san: san });
+
+          if (nextState.status !== 'playing') {
+            chessState.phase = 'GAME_OVER';
+            playChessSound('end', chessState.muted);
+            if (nextState.status === 'checkmate') {
+              var win = raw.nextPos.turn === 'w' ? 'b' : 'w';
+              chessState.winnerText = win === 'w' ? '백(White) 승리' : '흑(Black) 승리';
+              chessState.endReason = '체크메이트로 대국이 종료되었습니다.';
+            } else if (nextState.status === 'stalemate') {
+              chessState.winnerText = '무승부';
+              chessState.endReason = '스테일메이트(합법 수 없음)로 무승부입니다.';
+            } else {
+              chessState.winnerText = '무승부';
+              chessState.endReason = '체크메이트가 불가능한 기물 부족 상태입니다.';
+            }
+          } else {
+            if (nextState.inCheck) playChessSound('check', chessState.muted);
+            else if (raw.captured) playChessSound('capture', chessState.muted);
+            else playChessSound('move', chessState.muted);
+          }
+
+          renderChess();
+          if (chessState.phase === 'PLAYING') maybeTriggerBot();
+        }
+
+        function maybeTriggerBot() {
+          if (chessState.phase !== 'PLAYING' || chessState.mode !== 'bot' || chessState.pendingPromo) {
+            chessState.botThinking = false;
+            return;
+          }
+          var botColor = chessState.playerSide === 'w' ? 'b' : 'w';
+          if (chessState.pos.turn !== botColor) {
+            chessState.botThinking = false;
+            return;
+          }
+          chessState.botThinking = true;
+          renderChess();
+          clearBotTimer();
+          chessState.botTimer = setTimeout(function () {
+            var m = chooseBotMove(chessState.pos, chessState.difficulty);
+            chessState.botThinking = false;
+            if (m) commitChessMove(m);
+            else renderChess();
+          }, 420);
+        }
+
+        function renderChess() {
+          var analysis = getChessGameStatus(chessState.pos);
+          var legalForSel = [];
+          if (chessState.selected && chessState.phase === 'PLAYING') {
+            legalForSel = analysis.legalMoves.filter(function (m) {
+              return m.from[0] === chessState.selected[0] && m.from[1] === chessState.selected[1];
+            });
+          }
+
+          el.chessLimitBanner.classList.toggle('hidden', !chessState.limitExceeded);
+          el.chessTitleOverlay.classList.toggle('hidden', chessState.phase !== 'TITLE_MENU');
+          el.chessGameoverOverlay.classList.toggle('hidden', chessState.phase !== 'GAME_OVER');
+          el.chessPromoOverlay.classList.toggle('hidden', !chessState.pendingPromo);
+
+          if (chessState.phase === 'GAME_OVER') {
+            el.chessWinnerText.textContent = chessState.winnerText;
+            el.chessEndReason.textContent = chessState.endReason;
+          }
+
+          if (chessState.pendingPromo) {
+            var pOpts = [
+              { type: 'q', label: '퀸' },
+              { type: 'r', label: '룩' },
+              { type: 'b', label: '비숍' },
+              { type: 'n', label: '나이트' },
+            ];
+            el.chessPromoChoices.innerHTML = '';
+            pOpts.forEach(function (opt) {
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'btn btn-outline';
+              btn.style.flexDirection = 'column';
+              btn.style.padding = '8px';
+              btn.innerHTML =
+                pieceSvgHtml(opt.type, chessState.pos.turn, 30) +
+                '<span style="font-size:11px;">' +
+                opt.label +
+                '</span>';
+              btn.addEventListener('click', function () {
+                commitChessMove({
+                  from: chessState.pendingPromo.from,
+                  to: chessState.pendingPromo.to,
+                  promotion: opt.type,
+                });
+              });
+              el.chessPromoChoices.appendChild(btn);
+            });
+          }
+
+          // Material score
+          var wPts = 0, bPts = 0;
+          for (var rr = 0; rr < 8; rr++) {
+            for (var cc = 0; cc < 8; cc++) {
+              var pc = chessState.pos.board[rr][cc];
+              if (!pc || pc.type === 'k') continue;
+              if (pc.color === 'w') wPts += PIECE_VALUES[pc.type];
+              else bPts += PIECE_VALUES[pc.type];
+            }
+          }
+          var bal = Math.round((wPts - bPts) / 100);
+          var fl = chessState.flipped;
+          el.chessTopLabel.textContent = fl
+            ? '백 (White)'
+            : chessState.mode === 'bot' && chessState.playerSide === 'w'
+              ? 'AI 봇 (흑)'
+              : '흑 (Black)';
+          el.chessBottomLabel.textContent = fl
+            ? chessState.mode === 'bot' && chessState.playerSide === 'w'
+              ? 'AI 봇 (흑)'
+              : '흑 (Black)'
+            : '백 (White)';
+          el.chessTopAdv.textContent = (!fl && bal < 0) || (fl && bal > 0) ? '+' + Math.abs(bal) : '';
+          el.chessBottomAdv.textContent = (!fl && bal > 0) || (fl && bal < 0) ? '+' + Math.abs(bal) : '';
+
+          el.chessTopCap.innerHTML = (fl ? chessState.capWhite : chessState.capBlack)
+            .map(function (p) { return pieceSvgHtml(p.type, p.color, 18); })
+            .join('');
+          el.chessBottomCap.innerHTML = (fl ? chessState.capBlack : chessState.capWhite)
+            .map(function (p) { return pieceSvgHtml(p.type, p.color, 18); })
+            .join('');
+
+          // Render 64 squares
+          var rows = fl ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+          var cols = fl ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+          el.chessBoard.innerHTML = '';
+
+          rows.forEach(function (r) {
+            cols.forEach(function (c) {
+              var piece = chessState.pos.board[r][c];
+              var isLight = (r + c) % 2 === 0;
+              var isSel = chessState.selected && chessState.selected[0] === r && chessState.selected[1] === c;
+              var isLast =
+                chessState.lastMove &&
+                ((chessState.lastMove.from[0] === r && chessState.lastMove.from[1] === c) ||
+                  (chessState.lastMove.to[0] === r && chessState.lastMove.to[1] === c));
+              var tgtMove = legalForSel.find(function (m) { return m.to[0] === r && m.to[1] === c; });
+              var isChk = analysis.inCheck && piece && piece.type === 'k' && piece.color === chessState.pos.turn;
+
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.setAttribute('aria-label', FILES[c] + String(8 - r));
+              var cls = 'sq-btn';
+              if (chessState.phase === 'PLAYING') cls += ' playable';
+              if (isLast) cls += isLight ? ' last-light' : ' last-dark';
+              else if (!isLight) cls += ' dark';
+              if (isSel) cls += ' selected';
+              if (isChk) cls += ' in-check';
+              btn.className = cls;
+
+              var inner = '';
+              var coordColor = isLight ? '#5A8D71' : '#F0F2EC';
+              if (c === cols[0]) inner += '<span class="sq-coord-rank" style="color:' + coordColor + ';">' + (8 - r) + '</span>';
+              if (r === rows[7]) inner += '<span class="sq-coord-file" style="color:' + coordColor + ';">' + FILES[c] + '</span>';
+              if (piece) inner += pieceSvgHtml(piece.type, piece.color);
+              if (tgtMove && !piece) inner += '<span class="legal-dot"></span>';
+              if (tgtMove && piece) inner += '<span class="legal-ring"></span>';
+              btn.innerHTML = inner;
+
+              btn.addEventListener('click', function () {
+                if (chessState.phase !== 'PLAYING' || chessState.pendingPromo || chessState.botThinking) return;
+                if (chessState.mode === 'bot' && chessState.pos.turn !== chessState.playerSide) return;
+
+                if (chessState.selected) {
+                  var sr = chessState.selected[0], sc = chessState.selected[1];
+                  if (sr === r && sc === c) {
+                    chessState.selected = null;
+                    renderChess();
+                    return;
+                  }
+                  var matches = legalForSel.filter(function (m) { return m.to[0] === r && m.to[1] === c; });
+                  if (matches.length > 0) {
+                    if (matches.some(function (m) { return m.promotion; })) {
+                      chessState.pendingPromo = { from: [sr, sc], to: [r, c] };
+                      renderChess();
+                      return;
+                    }
+                    commitChessMove(matches[0]);
+                    return;
+                  }
+                }
+
+                if (piece && piece.color === chessState.pos.turn) {
+                  chessState.selected = [r, c];
+                } else {
+                  chessState.selected = null;
+                }
+                renderChess();
+              });
+
+              el.chessBoard.appendChild(btn);
+            });
+          });
+
+          // Right Sidebar Status & History
+          el.chessStatusHeading.textContent =
+            chessState.phase === 'TITLE_MENU'
+              ? '대국 설정 대기 중'
+              : chessState.phase === 'GAME_OVER'
+                ? chessState.winnerText
+                : chessState.botThinking
+                  ? 'AI 봇이 수를 고민하고 있습니다...'
+                  : (chessState.pos.turn === 'w' ? '백(White)' : '흑(Black)') +
+                    ' 차례' +
+                    (analysis.inCheck ? ' · 체크!' : '');
+          el.chessMoveCount.textContent = chessState.pos.fullMoveNumber + '수';
+          el.chessBotOptions.classList.toggle('hidden', chessState.mode !== 'bot');
+          el.chessResignBtn.classList.toggle('hidden', chessState.phase !== 'PLAYING');
+          el.chessStartBtn.textContent = chessState.phase === 'PLAYING' ? '새 대국 시작' : '대국 시작';
+
+          var lockedOpts = chessState.phase === 'PLAYING';
+          document.querySelectorAll('[data-chess-mode],[data-chess-diff],[data-chess-side]').forEach(function (b) {
+            b.disabled = lockedOpts;
+          });
+
+          el.chessPlyTotal.textContent = '총 ' + chessState.history.length + '수';
+          if (chessState.history.length === 0) {
+            el.chessMoveLog.innerHTML =
+              '<p style="padding:24px 0;text-align:center;font-size:12px;color:var(--muted);">대국을 시작하고 기물을 움직이면 기보가 순서대로 기록됩니다.</p>';
+          } else {
+            var pairsHtml = '';
+            for (var hi = 0; hi < chessState.history.length; hi += 2) {
+              var wSan = chessState.history[hi] ? chessState.history[hi].san : '';
+              var bSan = chessState.history[hi + 1] ? chessState.history[hi + 1].san : '';
+              pairsHtml +=
+                '<div class="mono" style="display:grid;grid-template-columns:2fr 5fr 5fr;padding:6px 0;border-bottom:1px solid #eceee9;font-size:12px;">' +
+                '<span style="color:var(--muted);">' +
+                (Math.floor(hi / 2) + 1) +
+                '.</span>' +
+                '<span style="font-weight:600;">' +
+                escapeHtml(wSan) +
+                '</span>' +
+                '<span style="font-weight:600;color:var(--ink-sub);">' +
+                escapeHtml(bSan) +
+                '</span></div>';
+            }
+            el.chessMoveLog.innerHTML = pairsHtml;
+          }
+        }
+
+        document.getElementById('chess-back-btn').addEventListener('click', function () { switchView('scanner'); });
+        document.getElementById('chess-overlay-start-btn').addEventListener('click', startNewChessGame);
+        document.getElementById('chess-overlay-restart-btn').addEventListener('click', startNewChessGame);
+        el.chessStartBtn.addEventListener('click', startNewChessGame);
+
+        el.chessResignBtn.addEventListener('click', function () {
+          if (chessState.phase !== 'PLAYING') return;
+          clearBotTimer();
+          chessState.botThinking = false;
+          chessState.phase = 'GAME_OVER';
+          playChessSound('end', chessState.muted);
+          var loser = chessState.pos.turn;
+          chessState.winnerText = loser === 'w' ? '흑(Black) 승리' : '백(White) 승리';
+          chessState.endReason = (loser === 'w' ? '백' : '흑') + '의 기권으로 대국이 종료되었습니다.';
+          renderChess();
+        });
+
+        el.chessFlipBtn.addEventListener('click', function () {
+          chessState.flipped = !chessState.flipped;
+          renderChess();
+        });
+
+        el.chessMuteBtn.addEventListener('click', function () {
+          chessState.muted = !chessState.muted;
+          el.chessMuteBtn.textContent = chessState.muted ? '음소거됨' : '효과음 켜짐';
+        });
+
+        document.querySelectorAll('[data-chess-mode]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            chessState.mode = btn.getAttribute('data-chess-mode');
+            document.querySelectorAll('[data-chess-mode]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+            renderChess();
+          });
+        });
+
+        document.querySelectorAll('[data-chess-diff]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            chessState.difficulty = btn.getAttribute('data-chess-diff');
+            document.querySelectorAll('[data-chess-diff]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+          });
+        });
+
+        document.querySelectorAll('[data-chess-side]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            chessState.playerSide = btn.getAttribute('data-chess-side');
+            document.querySelectorAll('[data-chess-side]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+          });
+        });
+
+        // ============================================================
+        // 10. ADMIN CONSOLE (Passcode, Vouchers, Quota Grant, Logs)
+        // ============================================================
+        function renderAdminView() {
+          syncStorePeriod();
+          var hasPass = Boolean(appStore.adminPasscodeHash);
+
+          if (!adminUnlocked) {
+            el.adminAuthBox.classList.remove('hidden');
+            el.adminConsoleBox.classList.add('hidden');
+            el.adminAuthError.classList.add('hidden');
+            el.adminAuthTitle.textContent = hasPass ? '관리자 콘솔 접속 인증' : '관리자 번호 초기 등록';
+            el.adminAuthDesc.textContent = hasPass
+              ? '무제한 이용권 코드 발급 및 이용자 한도를 관리하려면 등록한 관리자 번호를 입력하세요.'
+              : '사용할 관리자 번호(4자 이상)를 1회 등록하면 즉시 관리자 콘솔을 사용할 수 있습니다.';
+            return;
+          }
+
+          el.adminAuthBox.classList.add('hidden');
+          el.adminConsoleBox.classList.remove('hidden');
+
+          el.adminPolicySummary.textContent =
+            appStore.usageMonth +
+            ' 기준 · 실제 결제 비활성화 · 현재 요금제: ' +
+            (appStore.plan === 'unlimited' ? '월 무제한' : '월 무료 플랜');
+
+          // Vouchers
+          if (appStore.vouchers.length === 0) {
+            el.adminVouchersArea.innerHTML =
+              '<p style="margin:0;font-size:12px;color:var(--muted);">아직 발급된 이용권 코드가 없습니다. 오른쪽 위 버튼으로 발급해 보세요.</p>';
+          } else {
+            el.adminVouchersArea.innerHTML =
+              '<div style="border:1px solid #eceee9;border-radius:12px;padding:0 14px;">' +
+              appStore.vouchers
+                .map(function (v) {
+                  return (
+                    '<div style="padding:10px 0;border-bottom:1px solid #eceee9;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;font-size:12px;">' +
+                    '<div style="display:flex;align-items:center;gap:12px;">' +
+                    '<span class="mono" style="font-weight:700;">' +
+                    escapeHtml(v.code) +
+                    '</span>' +
+                    '<span class="mono" style="color:var(--muted);">발급 ' +
+                    formatTime(v.createdAt) +
+                    '</span>' +
+                    '<span style="font-weight:600;color:' +
+                    (v.redeemedBy ? 'var(--muted)' : 'var(--brand)') +
+                    ';">' +
+                    (v.redeemedBy ? '사용 완료' : '사용 가능') +
+                    '</span></div>' +
+                    (!v.redeemedBy
+                      ? '<button type="button" class="btn btn-outline" style="min-height:30px;padding:4px 10px;" data-copy-voucher="' +
+                        escapeHtml(v.code) +
+                        '">코드 복사</button>'
+                      : '') +
+                    '</div>'
+                  );
+                })
+                .join('') +
+              '</div>';
+
+            el.adminVouchersArea.querySelectorAll('[data-copy-voucher]').forEach(function (btn) {
+              btn.addEventListener('click', function () {
+                var code = btn.getAttribute('data-copy-voucher');
+                copyText(code, function () {
+                  btn.textContent = '복사됨!';
+                  setTimeout(function () { btn.textContent = '코드 복사'; }, 1600);
+                });
+              });
+            });
+          }
+
+          // Client Row
+          var isUnlim = appStore.plan === 'unlimited';
+          el.adminClientTbody.innerHTML =
+            '<tr>' +
+            '<td class="mono">' +
+            escapeHtml(appStore.clientId) +
+            '</td>' +
+            '<td style="font-weight:700;color:' +
+            (isUnlim ? 'var(--brand)' : 'var(--ink)') +
+            ';">' +
+            (isUnlim ? '월 무제한 (코드/부여)' : '월 무료 플랜') +
+            '</td>' +
+            '<td class="mono" style="color:var(--muted);">' +
+            (isUnlim && appStore.unlimitedExpiresAt
+              ? '만료 ' + formatDate(appStore.unlimitedExpiresAt) + ' (' + (getDaysRemaining() || 0) + '일)'
+              : escapeHtml(appStore.usageMonth)) +
+            '</td>' +
+            '<td class="mono" style="text-align:right;">' +
+            (isUnlim
+              ? '판별 ' + appStore.usedCount + '회 · 체스 ' + appStore.chessUsedCount + '판 (무제한)'
+              : '판별 ' + appStore.usedCount + '/20 · 체스 ' + appStore.chessUsedCount + '/20') +
+            '</td>' +
+            '<td style="text-align:right;white-space:nowrap;">' +
+            '<div style="display:inline-flex;gap:6px;">' +
+            '<button type="button" id="admin-grant-unlim-btn" class="btn btn-primary" style="min-height:32px;padding:4px 10px;">' +
+            (isUnlim ? '+1개월 연장' : '1개월 무제한 부여') +
+            '</button>' +
+            '<button type="button" id="admin-reset-free-btn" class="btn btn-outline" style="min-height:32px;padding:4px 10px;">무료 초기화</button>' +
+            '</div></td></tr>';
+
+          document.getElementById('admin-grant-unlim-btn').addEventListener('click', function () {
+            var now = Date.now();
+            var base = appStore.plan === 'unlimited' && appStore.unlimitedExpiresAt > now ? appStore.unlimitedExpiresAt : now;
+            appStore.plan = 'unlimited';
+            appStore.unlimitedExpiresAt = addOneMonth(base);
+            appStore.upgradeMethod = 'admin_grant';
+            scanLimitReached = false;
+            chessState.limitExceeded = false;
+            addLog('INFO', '관리자가 1개월 무제한 플랜을 직접 부여했습니다.');
+            writeStorage(STORE_KEY, appStore);
+            renderQuotaBars();
+            renderAdminView();
+          });
+
+          document.getElementById('admin-reset-free-btn').addEventListener('click', function () {
+            appStore.plan = 'free';
+            appStore.usedCount = 0;
+            appStore.chessUsedCount = 0;
+            appStore.unlimitedExpiresAt = null;
+            appStore.upgradeMethod = null;
+            scanLimitReached = false;
+            chessState.limitExceeded = false;
+            addLog('INFO', '관리자가 무료 20회 한도로 초기화했습니다.');
+            writeStorage(STORE_KEY, appStore);
+            renderQuotaBars();
+            renderAdminView();
+          });
+
+          // Logs
+          var logs = appStore.logs.filter(function (l) {
+            return adminLogFilter === 'ALL' || l.level === adminLogFilter;
+          });
+          el.adminLogTitle.textContent = '이벤트 로그 (' + logs.length + '건)';
+          if (logs.length === 0) {
+            el.adminLogList.innerHTML =
+              '<p style="padding:24px 0;text-align:center;font-size:12px;color:var(--muted);">표시할 로그가 없습니다.</p>';
+          } else {
+            el.adminLogList.innerHTML = logs
+              .map(function (l) {
+                var lvlColor = l.level === 'ERROR' ? 'var(--danger)' : l.level === 'WARN' ? 'var(--warn)' : 'var(--brand)';
+                return (
+                  '<div style="padding:10px 0;border-bottom:1px solid #eceee9;display:flex;gap:12px;font-size:12px;">' +
+                  '<span class="mono" style="color:var(--muted);flex-shrink:0;">' +
+                  formatTime(l.timestamp) +
+                  '</span>' +
+                  '<span class="mono" style="font-weight:700;width:46px;flex-shrink:0;color:' +
+                  lvlColor +
+                  ';">' +
+                  escapeHtml(l.level) +
+                  '</span>' +
+                  '<span style="color:var(--ink-sub);word-break:break-all;">' +
+                  escapeHtml(l.message) +
+                  '</span></div>'
+                );
+              })
+              .join('');
+          }
+        }
+
+        el.adminAuthForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          el.adminAuthError.classList.add('hidden');
+          var raw = el.adminPasscodeInput.value.trim();
+          if (raw.length < 4) {
+            el.adminAuthError.textContent = '관리자 번호는 4자 이상 입력해 주세요.';
+            el.adminAuthError.classList.remove('hidden');
+            return;
+          }
+          var hashed = hashPasscodeLocal(raw);
+          if (!appStore.adminPasscodeHash) {
+            appStore.adminPasscodeHash = hashed;
+            addLog('INFO', '초기 관리자 번호가 등록되었습니다.');
+            writeStorage(STORE_KEY, appStore);
+            adminUnlocked = true;
+            el.adminPasscodeInput.value = '';
+            renderAdminView();
+          } else if (appStore.adminPasscodeHash === hashed) {
+            addLog('INFO', '관리자 콘솔 인증에 성공했습니다.');
+            adminUnlocked = true;
+            el.adminPasscodeInput.value = '';
+            renderAdminView();
+          } else {
+            addLog('WARN', '잘못된 관리자 번호 입력 시도가 거부되었습니다.');
+            el.adminAuthError.textContent = '관리자 번호가 올바르지 않습니다.';
+            el.adminAuthError.classList.remove('hidden');
+          }
+        });
+
+        document.getElementById('admin-auth-back-btn').addEventListener('click', function () { switchView('scanner'); });
+        document.getElementById('admin-back-btn').addEventListener('click', function () { switchView('scanner'); });
+        document.getElementById('admin-logout-btn').addEventListener('click', function () {
+          adminUnlocked = false;
+          renderAdminView();
+        });
+        document.getElementById('admin-reset-passcode-btn').addEventListener('click', function () {
+          appStore.adminPasscodeHash = null;
+          adminUnlocked = false;
+          addLog('WARN', '관리자 번호가 초기화되었습니다.');
+          writeStorage(STORE_KEY, appStore);
+          renderAdminView();
+        });
+        document.getElementById('admin-clear-logs-btn').addEventListener('click', function () {
+          appStore.logs = [];
+          addLog('INFO', '관리자가 이벤트 로그를 초기화했습니다.');
+          renderAdminView();
+        });
+        document.getElementById('admin-issue-voucher-btn').addEventListener('click', function () {
+          var partA = Math.random().toString(16).slice(2, 6).toUpperCase().padEnd(4, 'A');
+          var partB = Math.random().toString(16).slice(2, 6).toUpperCase().padEnd(4, '9');
+          var code = 'UNLIM-' + partA + '-' + partB;
+          appStore.vouchers.unshift({
+            code: code,
+            createdAt: Date.now(),
+            redeemedBy: null,
+            redeemedAt: null,
+          });
+          addLog('INFO', '관리자가 무제한 이용권 코드를 발급했습니다: ' + code);
+          writeStorage(STORE_KEY, appStore);
+          renderAdminView();
+        });
+
+        document.querySelectorAll('[data-log-filter]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            adminLogFilter = btn.getAttribute('data-log-filter');
+            document.querySelectorAll('[data-log-filter]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+            renderAdminView();
+          });
+        });
+
+        function triggerHtmlBlobDownload(htmlText, btnEl) {
+          var blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'index.html';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          if (btnEl) {
+            var origHtml = btnEl.innerHTML;
+            btnEl.textContent = 'index.html 저장됨!';
+            setTimeout(function () { btnEl.innerHTML = origHtml; }, 2000);
+          }
+        }
+
+        function downloadStandaloneHtml(btnEl) {
+          if (window.location && (window.location.protocol === 'http:' || window.location.protocol === 'https:') && window.fetch) {
+            window
+              .fetch(window.location.href, { cache: 'no-store' })
+              .then(function (res) {
+                if (!res.ok) throw new Error('fetch failed');
+                return res.text();
+              })
+              .then(function (text) {
+                if (text && text.indexOf('<!doctype html>') !== -1) {
+                  triggerHtmlBlobDownload(text, btnEl);
+                } else {
+                  triggerHtmlBlobDownload(PRISTINE_HTML_SNAPSHOT, btnEl);
+                }
+              })
+              .catch(function () {
+                triggerHtmlBlobDownload(PRISTINE_HTML_SNAPSHOT, btnEl);
+              });
+          } else {
+            triggerHtmlBlobDownload(PRISTINE_HTML_SNAPSHOT, btnEl);
+          }
+        }
+
+        document.getElementById('hero-download-html-btn').addEventListener('click', function () {
+          downloadStandaloneHtml(this);
+        });
+        document.getElementById('footer-download-html-btn').addEventListener('click', function () {
+          downloadStandaloneHtml(this);
+        });
+
+        // ============================================================
+        // 11. BOOTSTRAP
+        // ============================================================
+        setCaptureMode(captureMode);
+        renderQuotaBars();
+        renderSamples();
+        renderGuidesAndTricky();
+        renderHistory();
+        renderResultPanel();
+        renderChess();
+      })();
+    </script>
+  <script id="vite-plugin-pwa:register-dev-sw" type="module">
+import registerDevSW from '/@vite-plugin-pwa/pwa-entry-point-loaded';
+registerDevSW();
+</script>
+</body>
+</html>
